@@ -1,7 +1,7 @@
 {
-    "name": "Auuki",
-    "short_name": "Auuki",
-    "description": "Cycling Structured Training",
+    "name": "nofun",
+    "short_name": "nofun",
+    "description": "Indoor cycling with a smart trainer: structured workouts and time-crunched plans",
     "start_url": "./",
     "display": "standalone",
     "orientation": "any",
