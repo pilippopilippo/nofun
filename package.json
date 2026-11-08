@@ -10,7 +10,8 @@
         "start": "parcel",
         "starttls": "parcel --cert ./dev_cert/cert.pem --key ./dev_cert/key.pem",
         "build": "parcel build",
-        "build:pages": "parcel build --public-url ./ --no-source-maps --no-cache"
+        "build:pages": "parcel build --public-url ./ --no-source-maps --no-cache",
+        "timecrunchy:update": "node scripts/update-timecrunchy.mjs"
     },
     "devDependencies": {
         "@babel/core": "^7.29.7",

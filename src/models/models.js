@@ -10,6 +10,7 @@ import { uuid } from '../storage/uuid.js';
 
 import API from './api.js';
 import { workouts as workoutsFile }  from '../workouts/workouts.js';
+import { planWorkouts } from '../timecrunchy.js';
 import { zwo } from '../workouts/zwo.js';
 import { fileHandler } from '../file.js';
 import { Model as Cycling } from '../physics.js';
@@ -771,7 +772,8 @@ class Workouts extends Model {
     }
     defaultValue() {
         const self = this;
-        return workoutsFile.map((w) => Object.assign(self.workoutModel.parse(w), {id: uuid()}));
+        // the rides of the chosen timecrunchy plan first, then the built-in workouts
+        return [...planWorkouts(), ...workoutsFile].map((w) => Object.assign(self.workoutModel.parse(w), {id: uuid()}));
     }
     defaultIsValid(value) {
         const self = this;

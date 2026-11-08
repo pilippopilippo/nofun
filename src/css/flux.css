@@ -3851,3 +3851,50 @@ body.no-hosted-api view-action[action=":strava:upload"] {
 body.no-hosted-api .activity--actions {
     grid-template-columns: 40% 1fr 1fr;
 }
+
+/* timecrunchy: training plan and zones (Settings) */
+timecrunchy-zones {
+    display: block;
+    width: 100%;
+}
+.timecrunchy--select {
+    min-height: 2.75em;
+    max-width: 100%;
+    padding: 0 0.5em;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+.timecrunchy--select option,
+.timecrunchy--select optgroup {
+    color: initial;
+}
+.timecrunchy--zones {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+.timecrunchy--zones caption {
+    text-align: left;
+    padding-bottom: 0.5em;
+}
+.timecrunchy--zones th,
+.timecrunchy--zones td {
+    padding: 0.4em 0.5em 0.4em 0;
+    text-align: left;
+    font-weight: normal;
+}
+.timecrunchy--zones td {
+    text-align: right;
+    white-space: nowrap;
+}
+.timecrunchy--share,
+.timecrunchy--credit {
+    opacity: 0.75;
+}
+.timecrunchy--credit {
+    margin: 0.75em 0 0;
+    font-size: 0.9em;
+}
