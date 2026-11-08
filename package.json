@@ -6,9 +6,11 @@
     "source": "src/index.html",
     "scripts": {
         "test": "jest",
+        "test:ci": "jest --config jest.ci.config.js",
         "start": "parcel",
         "starttls": "parcel --cert ./dev_cert/cert.pem --key ./dev_cert/key.pem",
-        "build": "parcel build"
+        "build": "parcel build",
+        "build:pages": "parcel build --public-url ./ --no-source-maps --no-cache"
     },
     "devDependencies": {
         "@babel/core": "^7.29.7",
