@@ -1,3 +1,53 @@
+# nofun
+
+> **nofun is a modified copy of [Auuki](https://github.com/dvmarinoff/Auuki)** by Dimitar Marinov, under the GNU AGPL-3.0 (`LICENSE.txt`), first changed on 2026-11-08. It is not affiliated with auuki.com.
+
+An indoor cycling app in the browser for structured workouts on a smart trainer over Bluetooth, with the time-crunched training plans of [timecrunchy](https://github.com/pilippopilippo/timecrunchy).
+
+**Live:** https://pilippopilippo.github.io/nofun/
+
+What is different from Auuki:
+
+- **Training plans.** Settings > Options > Training plan: the rides for the trainer of the chosen plan come first in the workout list, in plan order (`W3 Sat · 90 min EM + 2×[4×2 min] SEPI`). Settings > Zones shows the zones in watts for your FTP. Both come from timecrunchy, a pinned copy in `src/vendor/timecrunchy`.
+- **No account.** Login, Intervals.icu, Strava and TrainingPeaks need the closed api.auuki.com backend, so they are hidden and the API is never called (`HOSTED_API: false` in `src/models/config.js`). Rides stay in the browser; download the FIT of a ride and use Garmin > Import to put it in Garmin Connect.
+- **GitHub Pages.** Built for a sub path (`npm run build:pages`) and deployed by `.github/workflows/pages.yml`.
+- **Name and logo.** nofun, with a new logo.
+- **CI.** `npm run test:ci` skips the suites that already fail on Auuki's master (listed in `jest.ci.config.js`); `npm test` still runs everything.
+
+## Use it
+
+Chrome, Edge or Brave (Web Bluetooth). On Linux you may need `chrome://flags/#enable-experimental-web-platform-features`. A Tacx Flux is controlled through FTMS.
+
+## Publish on GitHub Pages
+
+1. Push this repository to `github.com/pilippopilippo/nofun` (public).
+2. Settings > Pages > Build and deployment > Source: **GitHub Actions**.
+3. Actions > Test and deploy to GitHub Pages > Run workflow (or push to `master`).
+
+## Keep it up to date
+
+Auuki:
+
+```
+git fetch upstream && git merge upstream/master
+```
+
+timecrunchy (after a new tag there):
+
+```
+npm run timecrunchy:update -- v1.1.0
+npm run test:ci
+git commit -am "timecrunchy 1.1.0"
+```
+
+## Credits
+
+nofun is built on [Auuki](https://github.com/dvmarinoff/Auuki) by Dimitar Marinov and contributors (AGPL-3.0). The plans and zones come from *The Time-Crunched Cyclist* by Chris Carmichael (3rd edition), adapted in timecrunchy (MIT).
+
+---
+
+The original Auuki README follows.
+
 <img alt="Auuki Indoor Cyling app for Structured Training" src="https://github.com/user-attachments/assets/292a3216-2f52-4994-9b15-614446e41912" />
 
 # Auuki
