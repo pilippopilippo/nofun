@@ -248,6 +248,12 @@ class AuthForms extends HTMLElement {
             this.error('Wrong credentials or Authentication error');
             return;
         }
+        if(action === ':disabled') {
+            this.switch('', this.el.tab);
+            this.switch('', this.el.password);
+            this.switch('', this.el.passkey);
+            return;
+        }
         if(action === ':no-api') {
             this.switch('', this.el.tab);
             this.switch('', this.el.password);

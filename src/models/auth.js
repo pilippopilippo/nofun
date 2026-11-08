@@ -33,7 +33,12 @@ function Auth(args = {}) {
     let _turnstileId;
     let _expired = true;
 
+    function hostedApi() {
+        return config.get().HOSTED_API !== false;
+    }
+
     function loadTurnstile() {
+        if(!hostedApi()) return;
         if(!_loggedIn && _hasApi && !_turnstileLoaded) {
             console.log(`:turnstile :load`);
 
@@ -384,6 +389,14 @@ function Auth(args = {}) {
     }
 
     async function status() {
+        if(!hostedApi()) {
+            _loggedIn = false;
+            _hasApi = false;
+            document.body?.classList.add('no-hosted-api');
+            xf.dispatch('action:auth', ':disabled');
+            return {strava: false, intervals: false, trainingPeaks: false};
+        }
+
         const url = `${api_uri}/api/rpc`;
 
         try {

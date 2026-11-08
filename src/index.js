@@ -6,6 +6,7 @@ import './ble/obc/controls.js';
 import './watch.js';
 import './course.js';
 import './lock.js';
+import './custom-build.js';
 
 function startServiceWorker() {
     if('serviceWorker' in navigator) {

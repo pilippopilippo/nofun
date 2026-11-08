@@ -3818,3 +3818,36 @@ and (min-width: 1900px) {
 }
 /* END Media Queries */
 
+
+
+/* custom build without the api.auuki.com backend (config HOSTED_API: false) */
+.no-hosted-api--note {
+    display: none;
+}
+body.no-hosted-api .no-hosted-api--note {
+    display: block;
+    max-width: var(--inner-max-width-fixed);
+    margin: 1.4em auto 0;
+    padding: 0 1em;
+    line-height: 1.5;
+    text-align: left;
+}
+body.no-hosted-api .no-hosted-api--note a {
+    color: inherit;
+    text-decoration: underline;
+}
+body.no-hosted-api #profile {
+    display: block;
+}
+body.no-hosted-api .auth,
+body.no-hosted-api account-badge,
+body.no-hosted-api #account--management--cont,
+body.no-hosted-api .app-connections .list--row--outer:has(.app-connection.intervals),
+body.no-hosted-api .app-connections .list--row--outer.strava,
+body.no-hosted-api .activity--action.action--intervals,
+body.no-hosted-api view-action[action=":strava:upload"] {
+    display: none;
+}
+body.no-hosted-api .activity--actions {
+    grid-template-columns: 40% 1fr 1fr;
+}

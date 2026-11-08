@@ -12,6 +12,10 @@ class Config {
             PWA_URI: window.location.origin ?? "https://auuki.com", // live
             API_URI: "https://api.auuki.com", // live
             TURNSTILE_SITE_KEY: '0x4AAAAAAA2IUz1CU0EU3E-O', // live
+            // custom build: accounts, Intervals.icu, Strava and TrainingPeaks
+            // need the api.auuki.com backend, which a copy on another domain
+            // can't use. false hides them and skips every call to the API.
+            HOSTED_API: false,
             STRAVA_CLIENT_ID: this.defaultStravaClientId,
             INTERVALS_CLIENT_ID: this.defaultIntervalsClientId,
             TRAINING_PEAKS_CLIENT_ID: this.defaultTrainingPeaksClientId,
