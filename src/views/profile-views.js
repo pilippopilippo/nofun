@@ -95,7 +95,7 @@ class NofunProfile extends HTMLElement {
             if(st.state === 'error') auto = `<p class="nf-warn">Could not save to ${esc(st.file)}: ${esc(st.error)}</p><button type="button" class="nf-btn" data-action="choose-file">Choose the file again…</button>`;
         }
         this.innerHTML = `
-            <div class="nf-page nf-profile">
+            <div class="nf-page nf-you">
                 <section class="nf-box" aria-label="You">
                     <h2 class="nf-h2">You</h2>
                     <div class="nf-form">

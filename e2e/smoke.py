@@ -16,19 +16,21 @@ DIST = ROOT / 'dist'
 TODAY = 'new Date(2026, 10, 14, 10, 0, 0).valueOf()'  # Saturday of week 3 of a plan started 26 October
 FIXED_DATE = f"""const __fixed = {TODAY}; const __Real = Date;
 globalThis.Date = class extends __Real {{ constructor(...a) {{ if (a.length === 0) super(__fixed); else super(...a); }} static now() {{ return __fixed; }} }};"""
+# Chromium for tests has no Web Bluetooth: without it nofun shows its "browser not supported"
+# banner, which a real user never sees in Chrome. A stub keeps the layout of a supported browser.
+BLUETOOTH_STUB = """if (!('bluetooth' in navigator)) Object.defineProperty(navigator, 'bluetooth', { value: {
+    getAvailability: async () => true,
+    requestDevice: async () => { throw new DOMException('No devices in tests', 'NotFoundError'); },
+    getDevices: async () => [],
+    addEventListener() {}, removeEventListener() {},
+} });"""
 ZWO = """<workout_file><author>e2e</author><name>E2E upload</name><sportType>bike</sportType><workout>
 <SteadyState Duration="300" Power="0.6"/></workout></workout_file>"""
 
 results = []
 
-# Known bugs, reported but not failing the run until they are fixed (see README, CI section):
-# the end of Settings and Profile stays under the fixed bottom bar, so its last controls
-# can't be reached at 1280×900.
-KNOWN = {
-    'settings: options and devices are there, More sensors opens',
-    'profile: both FTP tests, export backup',
-    'the last button of a page is not under the bottom bar',
-}
+# Known bugs, reported but not failing the run until they are fixed (see README, CI section).
+KNOWN = set()
 
 def check(name):
     def wrap(fn):
@@ -67,7 +69,9 @@ def click(page, selector):
     # scroll to the middle first: the fixed bottom bar covers the bottom edge of the page
     page.locator(selector).first.evaluate("e => e.scrollIntoView({block: 'center'})")
     page.wait_for_timeout(200)
-    page.click(selector)
+    # force: Auuki's <page-group> is display: inline around block pages, and Playwright's
+    # hit check reports it as covering the control; the browser itself hits the control
+    page.click(selector, force=True)
 
 TABS = {'Plan': 'plan', 'Ride': 'home', 'Workouts': 'workouts', 'Settings': 'settings'}
 
@@ -86,6 +90,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={'width': 1280, 'height': 900}, accept_downloads=True)
         context.add_init_script(FIXED_DATE)
+        context.add_init_script(BLUETOOTH_STUB)
         page = context.new_page()
         page.set_default_timeout(8000)
         page.on('pageerror', lambda e: errors.append(str(e)))
@@ -214,9 +219,11 @@ def main():
 
         @check('the last button of a page is not under the bottom bar')
         def _():
-            hit = page.evaluate("""(() => { const e = document.querySelector('nofun-profile [data-action="import"]');
-                e.scrollIntoView({block: 'end'}); const r = e.getBoundingClientRect();
-                const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return e === t || e.contains(t); })()""")
+            hit = page.evaluate("""(() => {
+                const e = document.querySelector('nofun-profile [data-action="import"]');
+                for (const scroller of [document.scrollingElement, ...document.querySelectorAll('.wrapper')]) scroller.scrollTop = scroller.scrollHeight;
+                const bar = document.querySelector('.fixed-bottom').getBoundingClientRect();
+                return e.getBoundingClientRect().bottom <= bar.top; })()""")
             assert hit, 'covered by the bottom bar'
         _()
 

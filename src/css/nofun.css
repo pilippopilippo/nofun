@@ -182,10 +182,10 @@ nofun-plan { display: block; }
 
 /* ---- Profile, data, ramp test ---- */
 nofun-profile { display: block; }
-.nf-profile { max-width: 900px; padding-bottom: 24px; }
+.nf-you { max-width: 900px; padding-bottom: 24px; }
 .nf-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 16px; margin: 8px 0; }
 .nf-form .nf-field { max-width: none; }
-.nf-form input, .nf-profile input[type="text"] {
+.nf-form input, .nf-you input[type="text"] {
     min-height: 48px; padding: 0 12px; border: 1px solid var(--nf-line-strong); border-radius: 8px;
     background: var(--nf-ground); color: var(--nf-text); font: 600 1.15em 'Barlow', system-ui, sans-serif; color-scheme: dark;
 }
@@ -195,9 +195,9 @@ nofun-profile { display: block; }
 .nf-table { width: 100%; margin-top: 12px; border-collapse: collapse; }
 .nf-table th, .nf-table td { padding: 8px 12px 8px 0; text-align: left; border-top: 1px solid var(--nf-line); white-space: nowrap; }
 .nf-table th { color: var(--nf-muted); font-weight: 500; border-top: 0; }
-.nf-profile .nf-box { display: flex; flex-direction: column; gap: 6px; }
-.nf-profile .nf-box > .nf-btn { align-self: flex-start; }
-.nf-profile p { margin: 0; }
+.nf-you .nf-box { display: flex; flex-direction: column; gap: 6px; }
+.nf-you .nf-box > .nf-btn { align-self: flex-start; }
+.nf-you p { margin: 0; }
 .nf-ramp-first { outline-color: var(--nf-ss); }
 .nf-ramp-first .nf-accent { color: var(--nf-ss); }
 .nf-dialog {
