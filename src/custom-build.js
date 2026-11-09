@@ -24,12 +24,23 @@ function linkSource(root = globalThis.document) {
     });
 }
 
+// the fixed bottom bar (current workout, timer, menu) has a height that depends on the
+// screen: it becomes --nf-bottom-bar, so Ride can take exactly the rest of the screen
+function measureBottomBar(root = globalThis.document) {
+    const bar = root?.querySelector?.('.fixed-bottom');
+    if(!bar || !globalThis.ResizeObserver) return;
+    const set = () => root.documentElement.style.setProperty('--nf-bottom-bar', `${bar.offsetHeight}px`);
+    new ResizeObserver(set).observe(bar);
+    set();
+}
+
 if(globalThis.document) {
     if(document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => linkSource());
+        document.addEventListener('DOMContentLoaded', () => { linkSource(); measureBottomBar(); });
     } else {
         linkSource();
+        measureBottomBar();
     }
 }
 
-export { sourceUrl, linkSource, upstream };
+export { sourceUrl, linkSource, measureBottomBar, upstream };

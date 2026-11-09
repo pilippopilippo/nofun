@@ -145,6 +145,40 @@ def main():
             assert ' W' in text(page, 'nofun-ride-hero [data-v="next"]'), text(page, 'nofun-ride-hero [data-v="next"]')
         _()
 
+        @check('ride: the whole screen, no scrollbar, at every size')
+        def _():
+          try:
+            for width, height in [(1920, 969), (1366, 657), (1280, 900), (1024, 600), (390, 844), (844, 390)]:
+                page.set_viewport_size({'width': width, 'height': height})
+                page.wait_for_timeout(250)
+                problem = page.evaluate("""(() => {
+                    const doc = document.scrollingElement;
+                    if (doc.scrollHeight > innerHeight + 1) return `page scrolls: ${doc.scrollHeight} > ${innerHeight}`;
+                    for (const e of document.querySelectorAll('.wrapper, #home-page, #home-page-wrapper'))
+                        if (e.scrollHeight > e.clientHeight + 1) return `${e.id || e.className} scrolls`;
+                    const fb = document.querySelector('.fixed-bottom').getBoundingClientRect();
+                    const bar = fb.top > 0 ? fb.top : innerHeight;  // Auuki's phone-on-its-side layout: bar on the right
+                    for (const sel of ['nofun-ride-hero', '#targets', '#graph-workout', '.data-tiles']) {
+                        if (!document.querySelector(sel)) continue;
+                        const e = document.querySelector(sel);
+                        if (getComputedStyle(e).display === 'none') continue;  // dropped on very low screens
+                        const r = e.getBoundingClientRect();
+                        if (r.bottom > bar + 1 || r.height < 20) return `${sel} not fully visible (${Math.round(r.top)}-${Math.round(r.bottom)}, bar at ${Math.round(bar)})`;
+                    }
+                    for (const card of document.querySelectorAll('.nf-hero-card'))
+                        if (card.scrollHeight > card.clientHeight + 1) return `a hero card is cut: ${card.textContent.trim().slice(0, 30)}`;
+                    return '';
+                })()""")
+                assert not problem, f'{width}x{height}: {problem}'
+                side = width >= 500 and height <= 432
+                if not side:
+                    bar = page.evaluate("document.querySelector('.fixed-bottom').getBoundingClientRect().height")
+                    assert bar <= (56 if width >= 900 or height <= 480 else 96) + 1, f'{width}x{height}: bottom bar {bar}px'
+          finally:
+            page.set_viewport_size({'width': 1280, 'height': 900})
+            page.wait_for_timeout(250)
+        _()
+
         @check('ride: trainer modes switch with one tap')
         def _():
             for mode in ['resistance', 'slope', 'erg']:
