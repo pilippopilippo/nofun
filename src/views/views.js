@@ -17,6 +17,7 @@ import './timecrunchy-views.js';
 import './profile-views.js';
 import './plan-views.js';
 import './ride-views.js';
+import './ride-flow.js';
 
 function start() {
     console.log('start views.');

@@ -94,6 +94,7 @@ def main():
         page = context.new_page()
         page.set_default_timeout(8000)
         page.on('pageerror', lambda e: errors.append(str(e)))
+        page.on('dialog', lambda d: d.accept())  # Auuki asks "Confirm Stop?"
         page.goto(url, wait_until='load')
         page.wait_for_timeout(1500)
 
@@ -134,6 +135,17 @@ def main():
             page.click('.nf-today .nf-ride')
             page.wait_for_timeout(500)
             assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
+        _()
+
+        @check('ride ready: workout, devices, Start, Ride screen')
+        def _():
+            flow = page.locator('nofun-ride-flow')
+            assert flow.is_visible(), 'the ready screen is not shown'
+            assert 'W3 Sat' in text(page, 'nofun-ride-flow .nf-flow-title'), text(page, 'nofun-ride-flow .nf-flow-title')
+            assert page.locator('nofun-ride-flow .nf-device').count() == 3
+            assert page.locator('nofun-ride-flow [data-action="start"]').count() == 1
+            click(page, 'nofun-ride-flow [data-action="preview"]')
+            assert not flow.is_visible(), 'Ride screen did not show the riding layout'
         _()
 
         @check('ride: the hero shows the target, the zone and what comes next')
@@ -211,7 +223,19 @@ def main():
             page.wait_for_timeout(1200)
             assert text(page, '#elapsed-time') == paused, 'timer runs while paused'
             page.click('#watch-stop')
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(600)
+        _()
+
+        @check('ride done: summary, FIT download, new ride')
+        def _():
+            assert page.locator('nofun-ride-flow .nf-flow-done').is_visible(), 'no summary after Stop'
+            values = page.evaluate("[...document.querySelectorAll('nofun-ride-flow .nf-stat-value')].map(e => e.textContent)")
+            assert values[0] not in ('0:00', ''), values
+            with page.expect_download() as download:
+                click(page, 'nofun-ride-flow [data-action="download"]')
+            assert download.value.suggested_filename.endswith('.fit'), download.value.suggested_filename
+            click(page, 'nofun-ride-flow [data-action="new"]')
+            assert page.locator('nofun-ride-flow .nf-device').count() == 3
         _()
 
         @check('workouts: both FTP tests first, select, upload a .zwo')

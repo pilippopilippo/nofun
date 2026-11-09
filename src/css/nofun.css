@@ -426,3 +426,54 @@ body.no-hosted-api .nf-planned { display: none; }
         #home-page-wrapper > .data-tiles { display: none; }
     }
 }
+
+/* ---- Ride: ready and done ---- */
+#home-page { position: relative; }
+nofun-ride-flow {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: block;
+    overflow: auto;
+    background: var(--nf-ground);
+    color: var(--nf-text);
+    font-family: 'Barlow', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+    text-align: left;
+}
+nofun-ride-flow[hidden] { display: none; }
+nofun-ride-flow p, nofun-ride-flow ul { margin: 0; }
+.nf-flow { max-width: 1280px; margin: 0 auto; padding: 20px 16px 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; box-sizing: border-box; }
+.nf-flow-main { flex: 3 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 12px; background: var(--nf-surface); }
+.nf-flow-side { flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.nf-flow-title { margin: 0; font: 600 clamp(26px, 3.4vw, 36px)/1.1 var(--nf-display); }
+.nf-flow-profile { display: block; width: 100%; height: clamp(60px, 14vh, 120px); }
+.nf-light { border: 0; background: var(--nf-text); color: var(--nf-ground); }
+.nf-light:hover { background: #FFFFFF; }
+.nf-btn[disabled] { opacity: 0.5; cursor: default; }
+.nf-device { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; background: var(--nf-surface); }
+.nf-device-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--nf-muted); box-sizing: border-box; }
+.nf-device.on .nf-device-dot { border: 0; background: var(--nf-em); }
+.nf-device-text { flex: 1; min-width: 0; }
+.nf-device-name { font-weight: 600; }
+.nf-checklist ul { padding-left: 20px; color: var(--nf-muted); }
+.nf-flow-done { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+.nf-flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.nf-done-line { color: var(--nf-em); font-weight: 600; }
+.nf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.nf-stat { padding: 16px 18px; border-radius: 12px; background: var(--nf-surface); }
+.nf-stat-value { font: 700 clamp(28px, 3vw, 40px)/1.1 var(--nf-display); font-variant-numeric: tabular-nums; }
+.nf-file { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.nf-file .nf-row { margin-top: 0; }
+a.nf-btn { text-decoration: none; }
+/* phones: the ready screen fits without scrolling */
+@media (max-width: 600px) {
+    .nf-flow { padding: 12px 12px 16px; gap: 12px; }
+    .nf-flow-main { padding: 16px; gap: 8px; }
+    .nf-flow-profile { height: 9vh; }
+    .nf-flow .nf-ride { min-height: 52px; font-size: 1.5em; }
+    .nf-device { padding: 8px 12px; }
+    .nf-device .nf-muted { font-size: 14px; }
+    .nf-checklist { display: none; }
+}
