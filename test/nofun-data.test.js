@@ -60,3 +60,21 @@ describe('ramp test', () => {
         expect(models.ftp.toAbsolute(ramp.steps[3].power, 250)).toBe(160);
     });
 });
+
+import { buildTwentyWorkout, twentyFtp, testOf, TWENTY } from '../src/ramp-test.js';
+
+describe('20-minute test', () => {
+    test('warm-up and openers in ERG, 20 minutes on a slope, cool-down', () => {
+        const workout = buildTwentyWorkout((x) => models.workout.parse(x));
+        expect(testOf(workout)).toBe(TWENTY);
+        const main = workout.intervals[workout.measured];
+        expect(main.duration).toBe(1200);
+        expect(main.steps[0].slope).toBe(1);
+        expect(main.steps[0].power).toBeUndefined();
+        expect(workout.intervals[0].steps[0].power).toBeGreaterThan(0);
+        expect(workout.intervals.at(-1).duration).toBe(600);
+    });
+    test('FTP is 95% of the 20-minute average', () => {
+        expect(twentyFtp(265)).toBe(252);
+    });
+});

@@ -205,3 +205,34 @@ nofun-profile { display: block; }
     background: var(--nf-surface); color: var(--nf-text); font-family: 'Barlow', system-ui, sans-serif; text-align: left;
 }
 .nf-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+.nf-tests { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 6px 0; }
+.nf-test { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--nf-line); border-radius: 10px; }
+.nf-test .nf-btn { align-self: flex-start; margin-top: auto; }
+.nf-test-title { font-family: var(--nf-display); font-weight: 600; font-size: 1.35em; }
+.nf-gap { margin-top: 16px; }
+.nf-test-status { display: block; }
+.nf-test-status[hidden] { display: none; }
+.nf-test-line {
+    margin: 8px 12px 0; padding: 10px 16px; border-radius: 8px; background: var(--nf-raised);
+    color: var(--nf-text); font: 1rem 'Barlow', system-ui, sans-serif; font-size: 16px; text-align: center;
+}
+.nf-test-line span { margin-right: 10px; color: var(--nf-ss); font-weight: 600; }
+
+/* ---- Auuki pages, nofun look ---- */
+body.no-hosted-api .nf-planned { display: none; }
+.nf-more-sensors { margin: 8px 0; }
+.nf-more-sensors > summary {
+    min-height: 44px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--nf-muted); font: 600 15px 'Barlow', system-ui, sans-serif; list-style: none;
+    border-top: 1px solid var(--nf-line); border-bottom: 1px solid var(--nf-line);
+}
+.nf-more-sensors > summary::-webkit-details-marker { display: none; }
+.nf-more-sensors > summary::after { content: '▾'; margin-left: 8px; }
+.nf-more-sensors[open] > summary::after { content: '▴'; }
+.nf-more-sensors > summary:focus-visible { outline: 2px solid var(--nf-text); outline-offset: -2px; }
+.list--sub-heading, .device-card--header--label, .connection-switch--label, .option--name {
+    color: var(--nf-muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}

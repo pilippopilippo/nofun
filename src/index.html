@@ -39,17 +39,18 @@
 
             <div id="home-page" class="page active" page="home">
                 <nofun-ramp-result></nofun-ramp-result>
+                <nofun-test-status class="nf-test-status"></nofun-test-status>
                     <div id="home-page-wrapper">
 
                         <header class="connections-header page-header">
                             <connection-switch for="ble:controllable" id="switch-controllable" class="connection-switch">
                                 <div class="connection-switch--indicator off"></div>
-                                <div class="connection-switch--label">Controllable</div>
+                                <div class="connection-switch--label">Trainer</div>
                             </connection-switch>
 
                             <connection-switch for="ble:heartRateMonitor" id="switch-hrm" class="connection-switch">
                                 <div class="connection-switch--indicator off"></div>
-                                <div class="connection-switch--label">HRM</div>
+                                <div class="connection-switch--label">Heart rate</div>
                             </connection-switch>
                         </header>
 
@@ -552,7 +553,7 @@
 
                 <!-- workout-list -->
                 <div id="view--workouts-workouts" class="workout-list sub-tab active">
-                    <div class="list--sub-section">
+                    <div class="list--sub-section nf-planned">
                         <div class="list--row--outer">
                             <div class="list--row--inner list--heading--cont control">
                                 <h2 class="list--sub-heading">Planned</h2>
@@ -1038,7 +1039,7 @@
                         <div class="device-card--cont">
                             <div class="device-card--header">
                                 <div></div>
-                                <div class="device-card--header--label">Controllable</div>
+                                <div class="device-card--header--label">Smart trainer</div>
                                 <div></div>
                             </div>
 
@@ -1241,7 +1242,7 @@
                         <div class="device-card--cont">
                             <div class="device-card--header">
                                 <div></div>
-                                <div class="device-card--header--label">HRM</div>
+                                <div class="device-card--header--label">Heart rate</div>
                                 <battery-level for="ble:heartRateMonitor">
                                     <div class="battery--level"></div>
                                 </battery-level>
@@ -1332,6 +1333,8 @@
                         </div>
                     </div> <!--end ant hrm settings -->
 
+                    <details class="nf-more-sensors">
+                    <summary>More sensors: Moxy, CORE, Open Bike Control</summary>
                     <!-- moxy-monitor settings -->
                     <div class="device-card">
                         <div class="device-card--cont">
@@ -1489,20 +1492,7 @@
                             </div>
                         </div>
                     </div> <!-- end open bike control settings -->
-
-                    <!-- Zones (timecrunchy) -->
-                    <div class="list--sub-section">
-                        <div class="list--row--outer">
-                            <div class="list--row--inner list--heading--cont">
-                                <h2 class="list--sub-heading">Zones</h2>
-                            </div>
-                        </div>
-                        <div class="list--row--outer">
-                            <div class="list--row--inner">
-                                <timecrunchy-zones></timecrunchy-zones>
-                            </div>
-                        </div>
-                    </div>
+                    </details>
 
                     <!-- Options -->
                     <div class="list--sub-section">

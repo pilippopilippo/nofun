@@ -9,7 +9,7 @@ import { models } from '../models/models.js';
 import { TEXT, ZONES, powerTarget } from '../vendor/timecrunchy/timecrunchy.js';
 import * as P from '../plan.js';
 import { loadProfile, saveProfile, loadHistory, addFtpResult } from '../profile.js';
-import { startRampTest, restoreBackup } from './profile-views.js';
+import { startTest, restoreBackup } from './profile-views.js';
 
 const esc = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -72,12 +72,25 @@ function profileSvg(zwo, label, opacity = 1) {
 let active = null;
 let elapsed = 0;
 
-function rideNow(ride) {
+function rideNow(ride, { go = true } = {}) {
     const workout = models.workout.parse(ride.zwo);
     xf.dispatch('workout', workout);
     active = { key: ride.key, name: workout?.meta?.name, seconds: ride.minutes * 60 };
-    xf.dispatch('ui:page-set', 'home');
+    if(go) xf.dispatch('ui:page-set', 'home');
 }
+
+// when the app opens, today's ride becomes the current workout: the play button starts it
+let preselected = false;
+function preselectToday() {
+    if(preselected) return;
+    preselected = true;
+    const state = P.loadState();
+    if(!state || state === P.NONE) return;
+    const today = P.todayView(state);
+    if(today.status === 'ride') rideNow(today.ride, { go: false });
+}
+xf.sub('workout:restore', () => setTimeout(preselectToday, 0));
+setTimeout(preselectToday, 2000);
 function finish() {
     if(!active) return;
     const state = P.loadState();
@@ -159,7 +172,8 @@ class NofunPlan extends HTMLElement {
             xf.dispatch('ui:page-set', 'home');
         }
         if(action === 'week') this.shownWeek = Number(el.dataset.week);
-        if(action === 'ramp') { startRampTest(); return; }
+        if(action === 'ramp') { startTest('ramp'); return; }
+        if(action === 'twenty') { startTest('twenty'); return; }
         if(action === 'restore') { restoreBackup(this.querySelector('[name="nf-import"]')); return; }
         if(action === 'ride') {
             const view = P.weekView(state, Number(el.dataset.week));
@@ -328,7 +342,7 @@ class NofunPlan extends HTMLElement {
             <section class="nf-today nf-ramp-first" aria-label="Find your FTP">
                 <div class="nf-today-main"><p class="nf-accent">First, find your FTP</p>
                 <h2 class="nf-today-title">Ramp test, about 20 minutes</h2>
-                <p class="nf-muted">Every target of the plan is a share of your FTP. The test ends by itself and saves the result.</p></div>
+                <p class="nf-muted">Every target of the plan is a share of your FTP. The test ends by itself and saves the result. Prefer a longer effort? <button type="button" class="nf-btn nf-link" data-action="twenty">Do the 20-minute test</button></p></div>
                 <div class="nf-today-go"><button type="button" class="nf-btn nf-primary nf-ride" data-action="ramp">Ramp test</button></div>
             </section>`;
         return `<div class="nf-page">

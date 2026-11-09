@@ -7,17 +7,19 @@ import { xf } from '../functions.js';
 import { models } from '../models/models.js';
 import { dataChanged } from '../data-events.js';
 import { loadProfile, saveProfile, loadHistory, addFtpResult } from '../profile.js';
-import { buildRampWorkout, RampTest, RAMP } from '../ramp-test.js';
+import { buildRampWorkout, buildTwentyWorkout, FtpTests, RAMP, TWENTY } from '../ramp-test.js';
 import * as backup from '../backup.js';
 
 const esc = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const day = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const time = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-function startRampTest() {
-    xf.dispatch('workout', buildRampWorkout((zwo) => models.workout.parse(zwo)));
+function startTest(id = 'ramp') {
+    const parse = (zwo) => models.workout.parse(zwo);
+    xf.dispatch('workout', id === 'twenty' ? buildTwentyWorkout(parse) : buildRampWorkout(parse));
     xf.dispatch('ui:page-set', 'home');
 }
+const startRampTest = () => startTest('ramp');
 
 // restore: the File System Access picker when there is one (it also links the file
 // for automatic saving), a file input otherwise
@@ -50,7 +52,8 @@ class NofunProfile extends HTMLElement {
     async onClick(event) {
         const action = event.target.closest('[data-action]')?.dataset.action;
         try {
-            if(action === 'ramp') startRampTest();
+            if(action === 'ramp') startTest('ramp');
+            if(action === 'twenty') startTest('twenty');
             if(action === 'save-profile') {
                 const name = this.querySelector('[name="nf-name"]').value;
                 const weight = parseFloat(this.querySelector('[name="nf-weight"]').value);
@@ -82,7 +85,7 @@ class NofunProfile extends HTMLElement {
         const history = loadHistory();
         const st = this.backupStatus;
         const rows = history.length
-            ? history.map((h) => `<tr><td>${esc(day(h.date))}</td><td><strong>${esc(h.ftp)} W</strong></td><td>${esc(h.source === 'ramp' ? `Ramp test · best minute ${h.best1min} W` : h.source === 'setup' ? 'Set at setup' : 'Set by hand')}</td><td>${h.applied ? 'Used' : 'Not used'}</td></tr>`).join('')
+            ? history.map((h) => `<tr><td>${esc(day(h.date))}</td><td><strong>${esc(h.ftp)} W</strong></td><td>${esc(h.source === 'ramp' ? `Ramp test · best minute ${h.best1min} W` : h.source === 'twenty' ? `20-minute test · average ${h.avg20} W` : h.source === 'setup' ? 'Set at setup' : 'Set by hand')}</td><td>${h.applied ? 'Used' : 'Not used'}</td></tr>`).join('')
             : '<tr><td colspan="4" class="nf-muted">No tests yet.</td></tr>';
         let auto = '<p class="nf-muted">Automatic backup to a file needs Chrome or Edge on a computer. Use Export and Import here.</p>';
         if(st.fileSupported) {
@@ -104,8 +107,13 @@ class NofunProfile extends HTMLElement {
                     <div class="nf-row"><button type="button" class="nf-btn nf-primary" data-action="save-profile">Save</button><span class="nf-saved nf-muted" role="status"></span></div>
                 </section>
                 <section class="nf-box" aria-label="FTP">
-                    <div class="nf-row nf-spread"><h2 class="nf-h2">FTP history</h2><button type="button" class="nf-btn" data-action="ramp">Ramp test</button></div>
-                    <p class="nf-muted nf-small">The ramp starts at ${RAMP.start} W and adds ${RAMP.step} W every minute. It ends by itself when your cadence stays under ${RAMP.endCadence} rpm; FTP is 75% of your best minute.</p>
+                    <h2 class="nf-h2">FTP tests</h2>
+                    <div class="nf-tests">
+                        <div class="nf-test"><p class="nf-test-title">Ramp test</p><p class="nf-muted nf-small">About 20 minutes. ERG from ${RAMP.start} W, +${RAMP.step} W a minute; it ends by itself when your cadence stays under ${RAMP.endCadence} rpm. FTP = 75% of your best minute. Quick, no pacing.</p><button type="button" class="nf-btn" data-action="ramp">Start the ramp test</button></div>
+                        <div class="nf-test"><p class="nf-test-title">20-minute test</p><p class="nf-muted nf-small">About 50 minutes. Warm-up, then 20 minutes as hard as you can hold, on a 1% slope with your gears. FTP = 95% of the average. Harder, closer to the definition.</p><button type="button" class="nf-btn" data-action="twenty">Start the 20-minute test</button></div>
+                    </div>
+                    <p class="nf-muted nf-small">Use the same test each time and follow the trend.</p>
+                    <h2 class="nf-h2 nf-gap">FTP history</h2>
                     <div class="nf-scroll"><table class="nf-table"><thead><tr><th>Date</th><th>FTP</th><th>How</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
                 </section>
                 <section class="nf-box" aria-label="Your data">
@@ -132,7 +140,7 @@ class NofunRampResult extends HTMLElement {
             if(!action || !this.result) return;
             const use = action === 'use';
             if(use) xf.dispatch('ui:ftp-set', this.result.ftp);
-            addFtpResult({ ftp: this.result.ftp, source: 'ramp', best1min: this.result.best1min, peak: this.result.peak, applied: use });
+            addFtpResult({ ftp: this.result.ftp, source: this.result.test, best1min: this.result.best1min, avg20: this.result.avg20, peak: this.result.peak, applied: use });
             this.result = null;
             this.querySelector('dialog')?.close();
         }, signal);
@@ -144,8 +152,8 @@ class NofunRampResult extends HTMLElement {
         this.result = result;
         this.innerHTML = `
             <dialog class="nf-dialog" aria-labelledby="nf-ramp-title">
-                <h2 id="nf-ramp-title" class="nf-h1">Ramp test: FTP ${esc(result.ftp)} W</h2>
-                <p class="nf-lead">Best minute ${esc(result.best1min)} W, highest step ${esc(result.peak)} W. ${this.ftp ? `Your FTP now is ${esc(this.ftp)} W.` : ''}</p>
+                <h2 id="nf-ramp-title" class="nf-h1">${result.test === 'twenty' ? '20-minute test' : 'Ramp test'}: FTP ${esc(result.ftp)} W</h2>
+                <p class="nf-lead">${result.test === 'twenty' ? `20-minute average ${esc(result.avg20)} W.` : `Best minute ${esc(result.best1min)} W, highest step ${esc(result.peak)} W.`} ${this.ftp ? `Your FTP now is ${esc(this.ftp)} W.` : ''}</p>
                 <p class="nf-muted">The cool-down is running. The result goes to your FTP history either way.</p>
                 <div class="nf-row"><button type="button" class="nf-btn nf-primary" data-action="use">Use ${esc(result.ftp)} W</button><button type="button" class="nf-btn" data-action="keep">Keep ${esc(this.ftp ?? 'the current FTP')}${this.ftp ? ' W' : ''}</button></div>
             </dialog>`;
@@ -153,13 +161,38 @@ class NofunRampResult extends HTMLElement {
     }
 }
 
+// Ride: how the test is going
+class NofunTestStatus extends HTMLElement {
+    connectedCallback() {
+        this.abortController = new AbortController();
+        this.hidden = true;
+        xf.sub('nofun:test-status', (st) => this.show(st), { signal: this.abortController.signal });
+    }
+    disconnectedCallback() {
+        this.abortController?.abort();
+    }
+    show(st) {
+        this.hidden = !st;
+        if(!st) return;
+        const mmss = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+        if(st.short) {
+            this.innerHTML = '<p class="nf-test-line">Test stopped too early for a result.</p>';
+            return;
+        }
+        this.innerHTML = st.test === 'twenty'
+            ? `<p class="nf-test-line"><span>20-minute test</span><strong>${esc(st.avg)} W</strong> average · FTP about <strong>${esc(st.ftp)} W</strong> · ${esc(mmss(st.left))} left</p>`
+            : `<p class="nf-test-line"><span>Ramp test</span>step <strong>${esc(st.target)} W</strong> · best minute <strong>${esc(st.best1min)} W</strong> · ${esc(mmss(st.seconds))}</p>`;
+    }
+}
+
+customElements.define('nofun-test-status', NofunTestStatus);
 customElements.define('nofun-profile', NofunProfile);
 customElements.define('nofun-ramp-result', NofunRampResult);
 
 // runtime
-RampTest();
+FtpTests();
 backup.initBackup();
 xf.sub('db:ftp', dataChanged);
 xf.sub('db:weight', dataChanged);
 
-export { startRampTest, restoreBackup, NofunProfile, NofunRampResult };
+export { startTest, startRampTest, restoreBackup, NofunProfile, NofunRampResult, NofunTestStatus };
