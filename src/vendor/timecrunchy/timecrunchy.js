@@ -1,4 +1,4 @@
-/*! timecrunchy 1.0.0 · https://pilippopilippo.github.io/timecrunchy/ · MIT License · generated, do not edit */
+/*! timecrunchy 1.1.0 · https://pilippopilippo.github.io/timecrunchy/ · MIT License · generated, do not edit */
 
 // src/data.js
 var ZONES = [
@@ -398,6 +398,14 @@ var TEXT = {
 
 // src/zwo.js
 var ERG = { EM: 0.65, EM_UPPER: 0.8, SS: 0.98, CR: 1.08, PI: 1.2, FP: 0.55, RECOVERY: 0.55, EASY: 0.5, VERY_EASY: 0.45 };
+var round3 = (x) => Math.round(x * 1e3) / 1e3;
+var zonePower = (id) => ZONES.find((z) => z.id === id).power.map(powerShare);
+var ERG_RANGE = {
+  EM: zonePower("EM").map(round3),
+  SS: zonePower("SS").map(round3),
+  CR: zonePower("CR").map(round3),
+  PI: [round3(zonePower("PI")[0]), 1.3]
+};
 var CADENCE = { EM: 90, SS: 90, CR: 78, PI: 105, PFPI: 95, FP: 112 };
 var PFPI_SLOPE = 6;
 var WARM_UP = 10;
@@ -440,16 +448,17 @@ function blockSeconds(part) {
   const sets = part.sets ?? 1;
   return sets * one + (sets - 1) * (part.rbs ?? 0) * 60;
 }
-var steady = (seconds, power, { cadence, slope, message } = {}) => `<SteadyState Duration="${Math.round(seconds)}" Power="${power}"${cadence ? ` Cadence="${cadence}"` : ""}${slope !== void 0 ? ` Slope="${slope}"` : ""}${message ? `><textevent timeoffset="0" message="${xml(message)}"/></SteadyState>` : "/>"}`;
+var rangeAttributes = (range2, prefix = "") => range2 ? ` ${prefix}PowerRangeLow="${range2[0]}" ${prefix}PowerRangeHigh="${range2[1]}"` : "";
+var steady = (seconds, power, { cadence, slope, message, range: range2 } = {}) => `<SteadyState Duration="${Math.round(seconds)}" Power="${power}"${rangeAttributes(range2)}${cadence ? ` Cadence="${cadence}"` : ""}${slope !== void 0 ? ` Slope="${slope}"` : ""}${message ? `><textevent timeoffset="0" message="${xml(message)}"/></SteadyState>` : "/>"}`;
 var ramp = (tag, seconds, from, to) => `<${tag} Duration="${seconds}" PowerLow="${from}" PowerHigh="${to}"/>`;
 function intervalSteps(part) {
   const unit = part.sec ? 1 : 60;
   const steps = [];
   const message = TERMS[part.kind] ? `${part.kind} \xB7 ${TERMS[part.kind]}` : void 0;
-  if (part.kind === "SS_TIME") return [steady(lo(part.min) * 60, ERG.SS, { cadence: CADENCE.SS, message: `SS \xB7 ${TERMS.SS}` })];
+  if (part.kind === "SS_TIME") return [steady(lo(part.min) * 60, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS, message: `SS \xB7 ${TERMS.SS}` })];
   if (part.kind === "PI_EFFORTS") {
     for (let i = 0; i < lo(part.count); i++) {
-      steps.push(steady(60, ERG.PI, { cadence: CADENCE.PI, message: i === 0 ? `PI \xB7 ${TERMS.PI}` : void 0 }));
+      steps.push(steady(60, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: i === 0 ? `PI \xB7 ${TERMS.PI}` : void 0 }));
       if (i < lo(part.count) - 1) steps.push(steady(120, ERG.RECOVERY));
     }
     return steps;
@@ -461,11 +470,11 @@ function intervalSteps(part) {
       const seconds = part.min * unit;
       switch (part.kind) {
         case "SS":
-          steps.push(steady(seconds, ERG.SS, { cadence: CADENCE.SS, message: first ? message : void 0 }));
+          steps.push(steady(seconds, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS, message: first ? message : void 0 }));
           break;
         case "PI":
         case "SEPI":
-          steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PI, message: first ? message ?? `PI \xB7 ${TERMS.PI}` : void 0 }));
+          steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: first ? message ?? `PI \xB7 ${TERMS.PI}` : void 0 }));
           break;
         case "PFPI":
           steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PFPI, slope: PFPI_SLOPE, message: first ? message : void 0 }));
@@ -478,20 +487,20 @@ function intervalSteps(part) {
         case "TL": {
           const [high, climbing, steadyMin] = part.ladder;
           steps.push(
-            steady(high * 60, ERG.PI, { cadence: CADENCE.PI, message: first ? message : void 0 }),
-            steady(climbing * 60, ERG.CR, { cadence: CADENCE.CR }),
-            steady(steadyMin * 60, ERG.SS, { cadence: CADENCE.SS })
+            steady(high * 60, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: first ? message : void 0 }),
+            steady(climbing * 60, ERG.CR, { cadence: CADENCE.CR, range: ERG_RANGE.CR }),
+            steady(steadyMin * 60, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS })
           );
           break;
         }
         case "OU": {
           const [under, over] = part.pattern;
           const repeat = part.min / (under + over);
-          const on = part.overFirst ? [over, ERG.CR, CADENCE.CR] : [under, ERG.SS, CADENCE.SS];
-          const off = part.overFirst ? [under, ERG.SS, CADENCE.SS] : [over, ERG.CR, CADENCE.CR];
+          const on = part.overFirst ? [over, ERG.CR, CADENCE.CR, ERG_RANGE.CR] : [under, ERG.SS, CADENCE.SS, ERG_RANGE.SS];
+          const off = part.overFirst ? [under, ERG.SS, CADENCE.SS, ERG_RANGE.SS] : [over, ERG.CR, CADENCE.CR, ERG_RANGE.CR];
           const text = first ? `<textevent timeoffset="0" message="${xml(message)}"/>` : "";
           steps.push(
-            `<IntervalsT Repeat="${repeat}" OnDuration="${on[0] * 60}" OffDuration="${off[0] * 60}" OnPower="${on[1]}" OffPower="${off[1]}" Cadence="${on[2]}" CadenceResting="${off[2]}"${text ? `>${text}</IntervalsT>` : "/>"}`
+            `<IntervalsT Repeat="${repeat}" OnDuration="${on[0] * 60}" OffDuration="${off[0] * 60}" OnPower="${on[1]}" OffPower="${off[1]}"${rangeAttributes(on[3], "On")}${rangeAttributes(off[3], "Off")} Cadence="${on[2]}" CadenceResting="${off[2]}"${text ? `>${text}</IntervalsT>` : "/>"}`
           );
           break;
         }
@@ -555,7 +564,7 @@ function rideToZwo(parts, meta = {}) {
       body.push(steady(upper, ERG.EM_UPPER, { cadence: CADENCE.EM, message: "EM at its upper end" }));
       fill -= upper;
     }
-    if (fill > 0) body.push(steady(fill, ERG.EM, { cadence: CADENCE.EM }));
+    if (fill > 0) body.push(steady(fill, ERG.EM, { cadence: CADENCE.EM, range: ERG_RANGE.EM }));
     body.push(ramp("Cooldown", COOL_DOWN * 60, 0.6, ERG.VERY_EASY));
   } else {
     for (const part of ride) {
@@ -574,7 +583,7 @@ function rideToZwo(parts, meta = {}) {
   const title = rideTitle(ride, emMinutes);
   const outdoorSuggested = Boolean(em2 && (em2.group || em2.hilly || em2.crossBike || em2.hours)) || seconds >= 180 * 60;
   const name = meta.name ? `${meta.name} \xB7 ${title}` : title;
-  const description = [meta.description ?? partsText(parts, null, TEXT), "ERG: middle of each zone, PowerIntervals 120% FTP, Peak-and-Fade on a slope."].filter(Boolean).join(" ");
+  const description = [meta.description ?? partsText(parts, null, TEXT), "ERG: middle of each zone (range in PowerRangeLow/PowerRangeHigh), PowerIntervals 120% FTP, Peak-and-Fade on a slope."].filter(Boolean).join(" ");
   const file = `<workout_file>
     <author>${AUTHOR}</author>
     <name>${xml(name)}</name>
@@ -625,6 +634,7 @@ export {
   CADENCE,
   DEFAULT_PLAN,
   ERG,
+  ERG_RANGE,
   FTP_SHARE,
   LIMITS,
   PFPI_SLOPE,

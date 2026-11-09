@@ -7,6 +7,7 @@ import './watch.js';
 import './course.js';
 import './lock.js';
 import './custom-build.js';
+import { RangeErg } from './range-erg.js';
 
 function startServiceWorker() {
     if('serviceWorker' in navigator) {
@@ -44,3 +45,4 @@ export {
     stop,
 };
 
+RangeErg();
