@@ -8,6 +8,8 @@ import { xf } from '../functions.js';
 import { models } from '../models/models.js';
 import { TEXT, ZONES, powerTarget } from '../vendor/timecrunchy/timecrunchy.js';
 import * as P from '../plan.js';
+import { loadProfile, saveProfile, loadHistory, addFtpResult } from '../profile.js';
+import { startRampTest, restoreBackup } from './profile-views.js';
 
 const esc = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -95,6 +97,7 @@ class NofunPlan extends HTMLElement {
         this.setup = null;   // {step, ftp, planId, start} while setting up
         this.shownWeek = null;
         xf.sub('db:ftp', (ftp) => { this.ftp = ftp; this.render(); }, { signal: this.abortController.signal });
+        xf.sub('db:weight', (weight) => { this.weight = weight; }, { signal: this.abortController.signal });
         this.addEventListener('click', this.onClick.bind(this), { signal: this.abortController.signal });
         this.addEventListener('change', this.onChange.bind(this), { signal: this.abortController.signal });
         this.render();
@@ -110,6 +113,9 @@ class NofunPlan extends HTMLElement {
         if(!this.setup) return;
         if(t.name === 'nf-plan') this.setup.planId = t.value;
         if(t.name === 'nf-ftp') this.setup.ftp = parseInt(t.value, 10);
+        if(t.name === 'nf-name') this.setup.name = t.value;
+        if(t.name === 'nf-weight') this.setup.weight = parseFloat(t.value);
+        if(t.name === 'nf-import' && t.files[0]) import('../backup.js').then((b) => b.importBackup(t.files[0])).catch((e) => alert(e.message));
         if(t.name === 'nf-start') this.setup.start = t.value;
         if(t.name === 'nf-plan') this.render();
     }
@@ -120,20 +126,29 @@ class NofunPlan extends HTMLElement {
         const state = P.loadState();
         if(action === 'setup') {
             const current = state && state !== P.NONE ? state.planId : 'new-granfondo';
-            this.setup = { step: 1, ftp: this.ftp, planId: current, start: P.isoDate(P.mondayOf(new Date())) };
+            this.setup = { step: 1, ftp: this.ftp, weight: this.weight, name: loadProfile().name, planId: current, start: P.isoDate(P.mondayOf(new Date())) };
         }
         if(action === 'next') {
             if(this.setup.step === 1) {
-                const ftp = parseInt(this.querySelector('[name="nf-ftp"]')?.value, 10);
-                if(!(ftp >= 50 && ftp <= 600)) { this.querySelector('.nf-error').textContent = 'Enter your FTP in watts, between 50 and 600.'; return; }
-                this.setup.ftp = ftp;
+                const value = (name) => this.querySelector(`[name="${name}"]`)?.value ?? '';
+                const ftp = value('nf-ftp') === '' ? null : parseInt(value('nf-ftp'), 10);
+                const weight = parseFloat(value('nf-weight'));
+                const error = this.querySelector('.nf-error');
+                if(!(weight >= 30 && weight <= 200)) { error.textContent = 'Enter your weight in kg, between 30 and 200.'; return; }
+                if(ftp !== null && !(ftp >= 50 && ftp <= 600)) { error.textContent = 'Enter your FTP in watts, between 50 and 600, or leave it empty.'; return; }
+                Object.assign(this.setup, { name: value('nf-name'), weight, ftp, ftpKnown: ftp !== null });
             }
             this.setup.step += 1;
         }
         if(action === 'back') this.setup.step = Math.max(1, this.setup.step - 1);
         if(action === 'cancel') this.setup = null;
         if(action === 'start') {
-            if(this.setup.ftp && this.setup.ftp !== this.ftp) xf.dispatch('ui:ftp-set', this.setup.ftp);
+            if(this.setup.name !== undefined) saveProfile({ name: this.setup.name });
+            if(this.setup.weight && this.setup.weight !== this.weight) xf.dispatch('ui:weight-set', this.setup.weight);
+            if(this.setup.ftpKnown) {
+                if(this.setup.ftp !== this.ftp) xf.dispatch('ui:ftp-set', this.setup.ftp);
+                if(!loadHistory().length) addFtpResult({ ftp: this.setup.ftp, source: 'setup' });
+            }
             P.startPlan(this.setup.planId, this.setup.start);
             this.setup = null;
             this.shownWeek = null;
@@ -144,6 +159,8 @@ class NofunPlan extends HTMLElement {
             xf.dispatch('ui:page-set', 'home');
         }
         if(action === 'week') this.shownWeek = Number(el.dataset.week);
+        if(action === 'ramp') { startRampTest(); return; }
+        if(action === 'restore') { restoreBackup(this.querySelector('[name="nf-import"]')); return; }
         if(action === 'ride') {
             const view = P.weekView(state, Number(el.dataset.week));
             const ride = view.days.flatMap((d) => d.rides).find((r) => r.key === el.dataset.key);
@@ -156,7 +173,7 @@ class NofunPlan extends HTMLElement {
     render() {
         const state = P.loadState();
         if(this.setup || !state || state === P.NONE) {
-            if(!this.setup) this.setup = { step: 1, ftp: this.ftp, planId: 'new-granfondo', start: P.isoDate(P.mondayOf(new Date())), first: !state };
+            if(!this.setup) this.setup = { step: 1, ftp: loadHistory().length ? this.ftp : undefined, weight: this.weight, name: loadProfile().name, planId: 'new-granfondo', start: P.isoDate(P.mondayOf(new Date())), first: !state };
             this.innerHTML = this.setupHtml(state);
             return;
         }
@@ -166,10 +183,10 @@ class NofunPlan extends HTMLElement {
     // ---------------------------------------------------------------- setup
     setupHtml(state) {
         const s = this.setup;
-        const steps = ['FTP', 'Plan', 'Start date'].map((name, i) => {
+        const steps = ['You', 'Plan', 'Start date'].map((name, i) => {
             const n = i + 1;
             const done = n < s.step;
-            const label = n === 1 && done ? `1 · FTP ${s.ftp} W` : `${n} · ${name}`;
+            const label = n === 1 && done && s.ftpKnown ? `1 · FTP ${s.ftp} W` : `${n} · ${name}`;
             return `<li class="nf-step${n === s.step ? ' current' : ''}${done ? ' done' : ''}"${n === s.step ? ' aria-current="step"' : ''}>${esc(label)}</li>`;
         }).join('');
         const cancel = state && state !== P.NONE
@@ -178,12 +195,16 @@ class NofunPlan extends HTMLElement {
         let body = '';
         if(s.step === 1) {
             body = `
-                <h1 class="nf-h1">Your FTP</h1>
-                <p class="nf-lead">Every target is a share of it. Don't know it? Ride a ramp test from Workouts first.</p>
-                <label class="nf-field"><span>FTP</span>
-                    <span class="nf-input-unit"><input name="nf-ftp" type="number" inputmode="numeric" min="50" max="600" value="${esc(s.ftp ?? '')}" required> W</span>
-                </label>
+                <h1 class="nf-h1">About you</h1>
+                <p class="nf-lead">Weight sets the speed and the climbs in slope mode; every target is a share of your FTP.</p>
+                <div class="nf-form">
+                    <label class="nf-field"><span>Name</span><input name="nf-name" type="text" autocomplete="nickname" maxlength="40" value="${esc(s.name ?? '')}"></label>
+                    <label class="nf-field"><span>Weight, kg</span><input name="nf-weight" type="number" inputmode="decimal" min="30" max="200" step="0.1" value="${esc(s.weight ?? '')}" required></label>
+                    <label class="nf-field"><span>FTP, W</span><input name="nf-ftp" type="number" inputmode="numeric" min="50" max="600" value="${esc(s.ftp ?? '')}"></label>
+                </div>
+                <p class="nf-muted">Don't know your FTP? Leave it empty: the plan starts with an automatic ramp test.</p>
                 <p class="nf-error" role="alert"></p>
+                ${state ? '' : '<p class="nf-muted">Used nofun before? <button type="button" class="nf-btn nf-link" data-action="restore">Restore a backup</button><input name="nf-import" type="file" accept=".json,application/json" hidden></p>'}
                 <div class="nf-actions">${cancel}<button type="button" class="nf-btn nf-primary" data-action="next">Next: plan</button></div>`;
         }
         if(s.step === 2) {
@@ -236,7 +257,7 @@ class NofunPlan extends HTMLElement {
 
         const header = `
             <div class="nf-head">
-                <div><h1 class="nf-h1">${esc(plan.name)}</h1>
+                <div>${loadProfile().name ? `<p class="nf-muted">Hi ${esc(loadProfile().name)}</p>` : ''}<h1 class="nf-h1">${esc(plan.name)}</h1>
                 <p class="nf-muted">${current >= 1 && current <= total ? `Week ${current} of ${total}` : `${total} weeks`} · ${current >= 1 ? 'started' : 'starts'} ${esc(longDate(started))}${ftp ? ` · FTP ${ftp} W` : ''}</p></div>
                 <button type="button" class="nf-btn" data-action="setup">Change plan</button>
             </div>`;
@@ -303,8 +324,16 @@ class NofunPlan extends HTMLElement {
 
         const zones = ZONES.map((z) => `<tr><th scope="row"><span class="nf-swatch" style="background:${ZONE_COLOR[z.id]}"></span>${esc(z.id)}</th><td>${ftp ? esc(powerTarget(z.id, ftp)) : '–'}</td></tr>`).join('');
 
+        const rampFirst = loadHistory().length ? '' : `
+            <section class="nf-today nf-ramp-first" aria-label="Find your FTP">
+                <div class="nf-today-main"><p class="nf-accent">First, find your FTP</p>
+                <h2 class="nf-today-title">Ramp test, about 20 minutes</h2>
+                <p class="nf-muted">Every target of the plan is a share of your FTP. The test ends by itself and saves the result.</p></div>
+                <div class="nf-today-go"><button type="button" class="nf-btn nf-primary nf-ride" data-action="ramp">Ramp test</button></div>
+            </section>`;
         return `<div class="nf-page">
             ${header}
+            ${rampFirst}
             ${hero}
             <div class="nf-columns">
                 <section class="nf-week-col" aria-label="Week ${view.week.number}">

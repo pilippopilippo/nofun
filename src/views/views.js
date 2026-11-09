@@ -14,6 +14,7 @@ import './watch.js';
 import './ant-device-scan.js';
 import './keyboard.js';
 import './timecrunchy-views.js';
+import './profile-views.js';
 import './plan-views.js';
 
 function start() {

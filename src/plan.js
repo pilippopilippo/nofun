@@ -7,6 +7,7 @@
 //
 
 import { PLANS, planRides } from './vendor/timecrunchy/timecrunchy.js';
+import { dataChanged } from './data-events.js';
 
 const KEY  = 'nofun:plan-state';
 const NONE = 'none';
@@ -38,6 +39,7 @@ function saveState(state, storage = globalThis.localStorage) {
     } catch(e) {
         // storage blocked: the plan lasts until the page is closed
     }
+    dataChanged();
     return state;
 }
 
