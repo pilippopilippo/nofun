@@ -10,6 +10,10 @@ An indoor cycling app in the browser for structured workouts on a smart trainer 
 
 Before riding, Ride shows the workout, the devices (connect with one tap) and Start; "Ride screen" shows the riding layout without starting. While riding: power and target, the zone band, interval time left, cadence, heart rate and what comes next, always on one screen. After Stop: time, averages, energy, distance, the work intervals against their target, the FIT file and the Garmin Connect import.
 
+## Library and You
+
+Library: search by name or type, filters (FTP tests, Auuki classics, yours), Upload .zwo, Create workout (the editor), and the workout you picked with Ride it. You: Profile first (name, weight, FTP, both FTP tests and their history, your data and backups), then Devices and options. Stop asks for confirmation inside the app.
+
 ## Use it
 
 Chrome, Edge or Brave (Web Bluetooth). On Linux you may need `chrome://flags/#enable-experimental-web-platform-features`.

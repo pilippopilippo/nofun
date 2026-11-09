@@ -264,4 +264,35 @@ class NofunRideFlow extends HTMLElement {
 
 customElements.define('nofun-ride-flow', NofunRideFlow);
 
-export { NofunRideFlow, profilePaths };
+
+
+// Stop, confirmed inside the app (Auuki used a browser dialog)
+class NofunStopDialog extends HTMLElement {
+    connectedCallback() {
+        this.abortController = new AbortController();
+        const signal = { signal: this.abortController.signal };
+        this.innerHTML = `
+            <dialog class="nf-dialog nf-stop-dialog" aria-labelledby="nf-stop-title">
+                <h2 id="nf-stop-title" class="nf-h1">End the ride?</h2>
+                <p class="nf-lead">The ride is saved and you see its summary.</p>
+                <div class="nf-row">
+                    <button type="button" class="nf-btn nf-primary" data-action="end">End ride</button>
+                    <button type="button" class="nf-btn" data-action="keep" autofocus>Keep riding</button>
+                </div>
+            </dialog>`;
+        this.dialog = this.querySelector('dialog');
+        xf.sub('nofun:stop-request', () => { if(!this.dialog.open) this.dialog.showModal(); }, signal);
+        this.addEventListener('click', (e) => {
+            const action = e.target.closest('[data-action]')?.dataset.action;
+            if(!action) return;
+            this.dialog.close();
+            if(action === 'end') xf.dispatch('ui:watchStopConfirmed');
+        }, signal);
+    }
+    disconnectedCallback() {
+        this.abortController?.abort();
+    }
+}
+
+customElements.define('nofun-stop-dialog', NofunStopDialog);
+export { NofunRideFlow, NofunStopDialog, profilePaths };

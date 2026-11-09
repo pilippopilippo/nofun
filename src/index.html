@@ -400,7 +400,7 @@
                         class="library--switch--heading active"
                         action="workouts:workouts"
                         topic=":nav"
-                    >Workouts
+                    >Library
                     </navigation-action>
                     <navigation-action
                         id="link--workouts-editor"
@@ -556,6 +556,7 @@
 
                 <!-- workout-list -->
                 <div id="view--workouts-workouts" class="workout-list sub-tab active">
+                    <nofun-library-tools></nofun-library-tools>
                     <div class="list--sub-section nf-planned">
                         <div class="list--row--outer">
                             <div class="list--row--inner list--heading--cont control">
@@ -653,18 +654,18 @@
                 </ant-device-request> <!-- end ant-device-request -->
                 <header class="page--header header--tab--group">
                     <navigation-action
-                        id="link--settings-settings"
+                        id="link--settings-profile"
                         class="library--switch--heading active"
-                        action="settings:settings" topic=":nav">Settings
+                        action="settings:profile" topic=":nav">Profile
                     </navigation-action>
                     <navigation-action
-                        id="link--settings-profile"
+                        id="link--settings-settings"
                         class="library--switch--heading"
-                        action="settings:profile" topic=":nav">Profile
+                        action="settings:settings" topic=":nav">Devices and options
                     </navigation-action>
                 </header>
                 <!-- profile--sub-tab -->
-                <div id="view--settings-profile" class="sub-tab">
+                <div id="view--settings-profile" class="sub-tab active">
                     <p class="no-hosted-api--note">
                         This copy works without an account. Rides are saved in this
                         browser; to put one in Garmin Connect, download its FIT and
@@ -961,7 +962,7 @@
                 </div> <!-- end profile--sub-tab -->
 
                 <!-- settings--sub-tab -->
-                <div id="view--settings-settings" class="sub-tab active">
+                <div id="view--settings-settings" class="sub-tab">
                     <div class="settings-tiles--cont">
                         <div id="ftp-settings" class="settings-tile">
                             <label for="ftp-value" class="settings-tile--label">FTP</label>
@@ -1602,6 +1603,7 @@
             </page-group>
             </navigation-stack>
 
+            <nofun-stop-dialog></nofun-stop-dialog>
             <div class="fixed-bottom">
                 <!-- <div class="fixed-bottom--cont"> -->
                 <workout-name id="workout-name">Free ride</workout-name>
@@ -1682,7 +1684,7 @@
                             <svg class="menu--btn--icon" width="24" height="24">
                                 <use href="#icon--list"></use>
                             </svg>
-                            <div class="menu--btn--label">Workouts</div>
+                            <div class="menu--btn--label">Library</div>
                         </page-btn>
                         <page-btn id="settings-tab-btn"
                                   class="menu--btn"
@@ -1692,7 +1694,7 @@
                             <svg class="menu--btn--icon" width="24" height="24">
                                 <use href="#icon--settings"></use>
                             </svg>
-                            <div class="menu--btn--label">Settings</div>
+                            <div class="menu--btn--label">You</div>
                         </page-btn>
                     </div> <!-- end page-btn-group -->
                 </div> <!-- end menu -->

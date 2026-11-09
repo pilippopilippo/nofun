@@ -73,7 +73,7 @@ def click(page, selector):
     # hit check reports it as covering the control; the browser itself hits the control
     page.click(selector, force=True)
 
-TABS = {'Plan': 'plan', 'Ride': 'home', 'Workouts': 'workouts', 'Settings': 'settings'}
+TABS = {'Plan': 'plan', 'Ride': 'home', 'Workouts': 'workouts', 'Library': 'workouts', 'Settings': 'settings', 'You': 'settings'}
 
 def go(page, label):
     page.click(f'#{TABS[label]}-tab-btn', force=True)
@@ -98,11 +98,11 @@ def main():
         page.goto(url, wait_until='load')
         page.wait_for_timeout(1500)
 
-        @check('opens on the setup, menu Plan · Ride · Workouts · Settings')
+        @check('opens on the setup, menu Plan · Ride · Library · You')
         def _():
             assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'plan'
             labels = page.evaluate("[...document.querySelectorAll('.menu--btn--label')].map(e => e.textContent.trim())")
-            assert labels == ['Plan', 'Ride', 'Workouts', 'Settings'], labels
+            assert labels == ['Plan', 'Ride', 'Library', 'You'], labels
             assert text(page, 'nofun-plan .nf-h1') == 'About you'
         _()
 
@@ -223,6 +223,9 @@ def main():
             page.wait_for_timeout(1200)
             assert text(page, '#elapsed-time') == paused, 'timer runs while paused'
             page.click('#watch-stop')
+            page.wait_for_timeout(300)
+            assert page.locator('.nf-stop-dialog').is_visible(), 'no in-app confirmation for Stop'
+            click(page, '.nf-stop-dialog [data-action="end"]')
             page.wait_for_timeout(600)
         _()
 
@@ -254,6 +257,23 @@ def main():
             assert page.locator('.workout--name:text-is("E2E upload")').count() == 1
         _()
 
+        @check('library: search, filters, Create workout')
+        def _():
+            go(page, 'Library')
+            visible = lambda: page.evaluate("[...document.querySelectorAll('workout-item')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.querySelector('.workout--name').textContent.trim())")
+            click(page, 'nofun-library-tools [data-filter="tests"]')
+            assert visible() == ['Ramp test', '20-minute test'], visible()
+            click(page, 'nofun-library-tools [data-filter="yours"]')
+            assert visible() == ['E2E upload'], visible()
+            click(page, 'nofun-library-tools [data-filter="all"]')
+            page.fill('nofun-library-tools input[name="nf-search"]', 'chili')
+            assert visible() and all('Chili' in n for n in visible()), visible()
+            page.fill('nofun-library-tools input[name="nf-search"]', '')
+            click(page, 'nofun-library-tools [data-action="create"]')
+            assert 'active' in (page.get_attribute('#view--workouts-editor', 'class') or '')
+            click(page, '#link--workouts-workouts')
+        _()
+
         @check('workouts: editor and ride report open')
         def _():
             page.click('#link--workouts-editor')
@@ -276,6 +296,7 @@ def main():
         @check('profile: both FTP tests, export backup')
         def _():
             click(page, '#link--settings-profile')
+            assert page.locator('#link--settings-profile').inner_text().strip().lower() == 'profile'
             page.wait_for_timeout(300)
             assert page.locator('nofun-profile [data-action="ramp"]').count() == 1
             assert page.locator('nofun-profile [data-action="twenty"]').count() == 1
