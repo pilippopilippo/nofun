@@ -111,7 +111,7 @@ function buildTwentyWorkout(parse, t = TWENTY) {
     const index = workout.intervals.findIndex((i) => i.duration === t.seconds);
     const intervals = workout.intervals.map((interval, i) => (i !== index ? interval : {
         ...interval,
-        steps: interval.steps.map((step) => ({ ...step, power: undefined, slope: t.slope })),
+        steps: interval.steps.map((step) => ({ ...step, power: 0, slope: t.slope })),
     }));
     return { ...workout, intervals, measured: index };
 }

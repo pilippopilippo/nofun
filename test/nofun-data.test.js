@@ -70,11 +70,22 @@ describe('20-minute test', () => {
         const main = workout.intervals[workout.measured];
         expect(main.duration).toBe(1200);
         expect(main.steps[0].slope).toBe(1);
-        expect(main.steps[0].power).toBeUndefined();
+        expect(main.steps[0].power).toBe(0);
         expect(workout.intervals[0].steps[0].power).toBeGreaterThan(0);
         expect(workout.intervals.at(-1).duration).toBe(600);
     });
     test('FTP is 95% of the 20-minute average', () => {
         expect(twentyFtp(265)).toBe(252);
+    });
+});
+
+describe('workout list', () => {
+    test('both automatic tests first, no manual Ramp Test from Auuki', () => {
+        const list = models.workouts.defaultValue();
+        expect(list.slice(0, 2).map((w) => w.meta.name)).toEqual(['Ramp test', '20-minute test']);
+        expect(list.filter((w) => w.meta.name === 'Ramp Test').length).toBe(0);
+        expect(list.every((w) => w.id)).toBe(true);
+        const twenty = list[1];
+        expect(twenty.intervals[twenty.measured].steps[0].slope).toBe(1);
     });
 });

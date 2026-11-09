@@ -10,6 +10,7 @@ import { uuid } from '../storage/uuid.js';
 
 import API from './api.js';
 import { workouts as workoutsFile }  from '../workouts/workouts.js';
+import { buildRampWorkout, buildTwentyWorkout } from '../ramp-test.js';
 import { zwo } from '../workouts/zwo.js';
 import { fileHandler } from '../file.js';
 import { Model as Cycling } from '../physics.js';
@@ -771,7 +772,11 @@ class Workouts extends Model {
     }
     defaultValue() {
         const self = this;
-        return workoutsFile.map((w) => Object.assign(self.workoutModel.parse(w), {id: uuid()}));
+        const parse = (w) => self.workoutModel.parse(w);
+        // nofun: the two automatic FTP tests come first and replace Auuki's manual Ramp Test
+        const tests = [buildRampWorkout(parse), buildTwentyWorkout(parse)];
+        const library = workoutsFile.filter((w) => !/<name>Ramp Test<\/name>/.test(w)).map(parse);
+        return [...tests, ...library].map((w) => Object.assign(w, {id: uuid()}));
     }
     defaultIsValid(value) {
         const self = this;
