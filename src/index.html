@@ -13,10 +13,8 @@
 
         <title>nofun · indoor cycling with structured workouts</title>
         <meta name="description" content="nofun: indoor cycling with smart trainers and power meters over Bluetooth, structured workouts and time-crunched plans">
-
-        <link rel="preconnect" href="https://fonts.gstatic.com">
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
         <link href="css/flux.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/nofun.css">
         <link rel="manifest" href="./manifest.webmanifest">
     </head>
 
@@ -35,7 +33,11 @@
             <navigation-stack>
             <page-group prop="page">
                 <compatibility-check></compatibility-check>
-                <div id="home-page" class="page active" page="home">
+                <div id="plan-page" class="page" page="plan">
+                <nofun-plan></nofun-plan>
+            </div>
+
+            <div id="home-page" class="page active" page="home">
                     <div id="home-page-wrapper">
 
                         <header class="connections-header page-header">
@@ -348,6 +350,7 @@
                                                         class="number-input--inc number-input--btn btn">+</button>
                                             </div>
                                         </power-target-control>
+                                        <nofun-power-range class="nofun-range"></nofun-power-range>
                                     </div> <!-- end erg mode -->
                                     <div id="resistance-mode-controls" class="tab mode-controls" tab="resistance">
                                         <resistance-target-control id="resistance-control-btn" class="number-btn">
@@ -1506,13 +1509,7 @@
                                 <h2 class="list--sub-heading">Options</h2>
                             </div>
                         </div>
-                        <div class="list--row--outer">
-                            <div class="list--row--inner option">
-                                <div class="option--name">Training plan</div>
-                                <timecrunchy-plan class="option--value"></timecrunchy-plan>
-                            </div>
-                        </div>
-                        <div class="list--row--outer">
+                                                <div class="list--row--outer">
                             <div class="list--row--inner option">
                                 <div class="option--name">Sound</div>
                                 <sound-control class="option--value sound--row">
@@ -1661,25 +1658,26 @@
                              topic=":nav"
                              >Ride report
                              </navigation-action> -->
-                        <page-btn id="settings-tab-btn"
+                        <page-btn id="plan-tab-btn"
                                   class="menu--btn"
                                   prop="page"
                                   effect="page-set"
-                                  param="settings">
-                            <svg class="menu--btn--icon" width="24" height="24">
-                                <use href="#icon--settings"></use>
+                                  param="plan">
+                            <svg class="menu--btn--icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                                <path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"></path>
                             </svg>
-                            <div class="menu--btn--label">Settings</div>
+                            <div class="menu--btn--label">Plan</div>
                         </page-btn>
                         <page-btn id="home-tab-btn"
-                                  class="menu--btn active"
+                                  class="menu--btn"
                                   prop="page"
                                   effect="page-set"
                                   param="home">
                             <svg class="menu--btn--icon" width="24" height="24">
                                 <use href="#icon--home"></use>
                             </svg>
-                            <div class="menu--btn--label">Home</div>
+                            <div class="menu--btn--label">Ride</div>
                         </page-btn>
                         <page-btn id="workouts-tab-btn"
                                   class="menu--btn"
@@ -1690,6 +1688,16 @@
                                 <use href="#icon--list"></use>
                             </svg>
                             <div class="menu--btn--label">Workouts</div>
+                        </page-btn>
+                        <page-btn id="settings-tab-btn"
+                                  class="menu--btn"
+                                  prop="page"
+                                  effect="page-set"
+                                  param="settings">
+                            <svg class="menu--btn--icon" width="24" height="24">
+                                <use href="#icon--settings"></use>
+                            </svg>
+                            <div class="menu--btn--label">Settings</div>
                         </page-btn>
                     </div> <!-- end page-btn-group -->
                 </div> <!-- end menu -->

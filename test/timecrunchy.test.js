@@ -3,7 +3,7 @@
  */
 
 import { zwo } from '../src/workouts/zwo.js';
-import { PLANS, selectedPlanId, selectPlan, planWorkouts, zoneWatts } from '../src/timecrunchy.js';
+import { PLANS, zoneWatts } from '../src/timecrunchy.js';
 import { planRides } from '../src/vendor/timecrunchy/timecrunchy.js';
 
 describe('timecrunchy plans in nofun', () => {
@@ -18,19 +18,6 @@ describe('timecrunchy plans in nofun', () => {
             }
         }
         expect(count).toBe(256);
-    });
-
-    test('the chosen plan is remembered, the default is the blog default', () => {
-        localStorage.clear();
-        expect(selectedPlanId()).toBe('new-granfondo');
-        selectPlan('maintenance');
-        expect(selectedPlanId()).toBe('maintenance');
-        expect(planWorkouts().length).toBe(15);
-        selectPlan(null);
-        expect(selectedPlanId()).toBe(null);
-        expect(planWorkouts()).toEqual([]);
-        localStorage.setItem('nofun:plan', 'a-plan-that-is-gone');
-        expect(selectedPlanId()).toBe('new-granfondo');
     });
 
     test('zones in watts for an FTP', () => {

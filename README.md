@@ -8,7 +8,9 @@ An indoor cycling app in the browser for structured workouts on a smart trainer 
 
 What is different from Auuki:
 
-- **Training plans.** Settings > Options > Training plan: the rides for the trainer of the chosen plan come first in the workout list, in plan order (`W3 Sat · 90 min EM + 2×[4×2 min] SEPI`). Settings > Zones shows the zones in watts for your FTP. Both come from timecrunchy, a pinned copy in `src/vendor/timecrunchy`.
+- **Plan page.** nofun opens on Plan: a first setup (FTP, one of the 9 time-crunched plans, the Monday it starts), then today's ride with a Ride button that loads it on the trainer, the week day by day, done and missed rides, and the zones in watts. The calendar is fixed; a ride missed earlier in the week can still be ridden that week. The plans come from timecrunchy, a pinned copy in `src/vendor/timecrunchy`; the state stays in the browser.
+- **ERG inside the zone.** Intervals carry their zone (timecrunchy 1.1.0). The trainer holds one power at a time, so nofun moves the ERG target inside the zone: it starts in the middle, 5 W up when you spin 5 rpm above the step's cadence, 5 W down below it; the -/+ buttons stay inside the zone too.
+- **Look.** The nofun theme (`src/css/nofun.css`): colors, Barlow fonts bundled from npm (no request to Google Fonts), menu Plan · Ride · Workouts · Settings.
 - **No account.** Login, Intervals.icu, Strava and TrainingPeaks need the closed api.auuki.com backend, so they are hidden and the API is never called (`HOSTED_API: false` in `src/models/config.js`). Rides stay in the browser; download the FIT of a ride and use Garmin > Import to put it in Garmin Connect.
 - **GitHub Pages.** Built for a sub path (`npm run build:pages`) and deployed by `.github/workflows/pages.yml`.
 - **Name and logo.** nofun, with a new logo.

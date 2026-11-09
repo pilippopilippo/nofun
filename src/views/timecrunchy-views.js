@@ -1,32 +1,11 @@
 //
-// Settings: the training plan and the zones in watts, from timecrunchy
+// Settings: the zones in watts, from timecrunchy
 //
 
 import { xf } from '../functions.js';
-import { PLANS, TEXT, NONE, VERSION, selectedPlanId, selectPlan, zoneWatts } from '../timecrunchy.js';
+import { VERSION, zoneWatts } from '../timecrunchy.js';
 
 const escape = (text) => String(text).replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-
-class TimecrunchyPlan extends HTMLElement {
-    connectedCallback() {
-        const current = selectedPlanId();
-        const groups = [...new Set(PLANS.map((plan) => plan.group))];
-        this.innerHTML = `
-            <select class="timecrunchy--select" aria-label="Training plan">
-                <option value="${NONE}"${current ? '' : ' selected'}>No plan</option>
-                ${groups.map((group) => `
-                    <optgroup label="${escape(TEXT.groups[group])}">
-                        ${PLANS.filter((plan) => plan.group === group).map((plan) =>
-                            `<option value="${plan.id}"${plan.id === current ? ' selected' : ''}>${escape(plan.name)}</option>`).join('')}
-                    </optgroup>`).join('')}
-            </select>`;
-        this.querySelector('select').addEventListener('change', (event) => {
-            selectPlan(event.target.value === NONE ? null : event.target.value);
-            // the workout list is built when the app starts
-            window.location.reload();
-        });
-    }
-}
 
 class TimecrunchyZones extends HTMLElement {
     connectedCallback() {
@@ -53,7 +32,6 @@ class TimecrunchyZones extends HTMLElement {
     }
 }
 
-customElements.define('timecrunchy-plan', TimecrunchyPlan);
 customElements.define('timecrunchy-zones', TimecrunchyZones);
 
-export { TimecrunchyPlan, TimecrunchyZones };
+export { TimecrunchyZones };
