@@ -136,6 +136,15 @@ def main():
             assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
         _()
 
+        @check('ride: the hero shows the target, the zone and what comes next')
+        def _():
+            target = text(page, 'nofun-ride-hero [data-v="target"]')
+            control = page.input_value('#power-control-btn input')
+            assert target == (f'{control} W' if int(control or 0) > 0 else '–'), (target, control)
+            assert page.locator('nofun-ride-hero [data-v="next-line"]').is_visible()
+            assert ' W' in text(page, 'nofun-ride-hero [data-v="next"]'), text(page, 'nofun-ride-hero [data-v="next"]')
+        _()
+
         @check('ride: trainer modes switch with one tap')
         def _():
             for mode in ['resistance', 'slope', 'erg']:
@@ -160,6 +169,7 @@ def main():
             page.wait_for_timeout(2300)
             elapsed = text(page, '#elapsed-time')
             assert elapsed not in ('', '--:--:--'), elapsed
+            assert text(page, 'nofun-ride-hero [data-v="left"]') != '–:––', 'interval time left not shown'
             page.click('#watch-lap')
             page.click('#watch-pause')
             page.wait_for_timeout(1200)
