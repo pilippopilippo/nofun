@@ -61,3 +61,11 @@ describe('training plan', () => {
         expect(weekView(state, 10, day('2026-12-21')).days.flatMap((d) => d.rides).find((r) => r.id === ride.id).status).not.toBe('done');
     });
 });
+
+describe('plan rides are built once', () => {
+    test('the same array for the same plan', () => {
+        const { ridesOf, planById } = require('../src/plan.js');
+        const plan = planById('new-granfondo');
+        expect(ridesOf(plan)).toBe(ridesOf(plan));
+    });
+});

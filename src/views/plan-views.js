@@ -114,8 +114,11 @@ class NofunPlan extends HTMLElement {
         this.addEventListener('click', this.onClick.bind(this), { signal: this.abortController.signal });
         this.addEventListener('change', this.onChange.bind(this), { signal: this.abortController.signal });
         this.render();
-        // open on Plan, unless the rider chose no plan
-        setTimeout(() => { if(P.loadState() !== P.NONE) xf.dispatch('ui:page-set', 'plan'); }, 0);
+        // open on Plan, unless the rider chose no plan; again once Auuki has restored the
+        // last page it showed, which would otherwise win
+        const openPlan = () => { if(P.loadState() !== P.NONE) xf.dispatch('ui:page-set', 'plan'); };
+        setTimeout(openPlan, 0);
+        xf.sub('workout:restore', () => setTimeout(openPlan, 0), { signal: this.abortController.signal });
     }
     disconnectedCallback() {
         this.abortController?.abort();
@@ -185,6 +188,8 @@ class NofunPlan extends HTMLElement {
     }
 
     render() {
+        const typing = this.contains(document.activeElement) && document.activeElement.tagName === 'INPUT' && document.activeElement.type !== 'radio';
+        if(typing) return;
         const state = P.loadState();
         if(this.setup || !state || state === P.NONE) {
             if(!this.setup) this.setup = { step: 1, ftp: loadHistory().length ? this.ftp : undefined, weight: this.weight, name: loadProfile().name, planId: 'new-granfondo', start: P.isoDate(P.mondayOf(new Date())), first: !state };

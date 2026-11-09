@@ -32,8 +32,30 @@ jobs:
       - name: App tests (see jest.ci.config.js)
         run: npm run test:ci
 
-  build:
+  e2e:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build for Pages
+        run: npm run build:pages
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Playwright
+        run: |
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: Every feature, in a real browser (e2e/smoke.py)
+        run: python e2e/smoke.py
+
+  build:
+    needs: [test, e2e]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:

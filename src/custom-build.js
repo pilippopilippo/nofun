@@ -24,12 +24,23 @@ function linkSource(root = globalThis.document) {
     });
 }
 
+// the fixed bottom bar (current workout + menu) covers the end of every page: its height
+// becomes --nf-bottom-bar, which pages keep free at the bottom (nofun.css)
+function reserveBottomBar(root = globalThis.document) {
+    const bar = root?.querySelector?.('.fixed-bottom');
+    if(!bar || !globalThis.ResizeObserver) return;
+    const set = () => root.documentElement.style.setProperty('--nf-bottom-bar', `${bar.offsetHeight}px`);
+    new ResizeObserver(set).observe(bar);
+    set();
+}
+
 if(globalThis.document) {
     if(document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => linkSource());
+        document.addEventListener('DOMContentLoaded', () => { linkSource(); reserveBottomBar(); });
     } else {
         linkSource();
+        reserveBottomBar();
     }
 }
 
-export { sourceUrl, linkSource, upstream };
+export { sourceUrl, linkSource, reserveBottomBar, upstream };
