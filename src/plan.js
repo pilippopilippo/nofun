@@ -45,6 +45,14 @@ function saveState(state, storage = globalThis.localStorage) {
 
 const planById = (id) => PLANS.find((p) => p.id === id);
 
+// the rides of a plan never change at runtime: build them once (planRides makes every .zwo)
+const ridesCache = new Map();
+function ridesOf(plan) {
+    if(!ridesCache.has(plan.id)) ridesCache.set(plan.id, planRides(plan));
+    return ridesCache.get(plan.id);
+}
+const statsCache = new Map();
+
 // the weeks one by one: the label '9–11' becomes weeks 9, 10 and 11 with the same rides
 function planWeeks(plan) {
     const weeks = [];
@@ -57,20 +65,23 @@ function planWeeks(plan) {
 
 // rides a week and hours a week on the trainer, outdoor rides a week
 function planStats(plan) {
+    if(statsCache.has(plan.id)) return statsCache.get(plan.id);
     const weeks = planWeeks(plan);
-    const rides = planRides(plan);
+    const rides = ridesOf(plan);
     let trainer = 0, minutes = 0, outdoor = 0;
     for(const week of weeks) {
         for(const ride of rides.filter((r) => r.week === week.label)) {
             if(ride.trainer) { trainer++; minutes += ride.minutes; } else outdoor++;
         }
     }
-    return {
+    const stats = {
         weeks: weeks.length,
         ridesPerWeek: trainer / weeks.length,
         hoursPerWeek: minutes / 60 / weeks.length,
         outdoorPerWeek: outdoor / weeks.length,
     };
+    statsCache.set(plan.id, stats);
+    return stats;
 }
 
 // 1 for the week of the start date; < 1 before it, > the plan's weeks after it
@@ -83,7 +94,7 @@ function weekView(state, weekNumber, today = new Date()) {
     const weeks   = planWeeks(plan);
     const week    = weeks[Math.min(Math.max(weekNumber, 1), weeks.length) - 1];
     const monday  = addDays(fromIso(state.start), (week.number - 1) * 7);
-    const rides   = planRides(plan).filter((r) => r.week === week.label);
+    const rides   = ridesOf(plan).filter((r) => r.week === week.label);
     const todayIso = isoDate(today);
     const current  = currentWeekNumber(state, today);
 
@@ -146,7 +157,7 @@ function markDone(state, key, date = new Date(), storage) {
 }
 
 export {
-    KEY, NONE, PLANS, loadState, saveState, planById, planWeeks, planStats, currentWeekNumber,
+    KEY, NONE, PLANS, ridesOf, loadState, saveState, planById, planWeeks, planStats, currentWeekNumber,
     weekView, todayView, weekSummary, startPlan, markDone, doneKey,
     isoDate, fromIso, addDays, mondayOf, dayIndex,
 };

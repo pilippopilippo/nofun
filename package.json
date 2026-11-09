@@ -7,6 +7,7 @@
     "scripts": {
         "test": "jest",
         "test:ci": "jest --config jest.ci.config.js",
+        "test:e2e": "npm run build:pages && python3 e2e/smoke.py",
         "start": "parcel",
         "starttls": "parcel --cert ./dev_cert/cert.pem --key ./dev_cert/key.pem",
         "build": "parcel build",

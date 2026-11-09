@@ -16,7 +16,7 @@ What is different from Auuki:
 - **No account.** Login, Intervals.icu, Strava and TrainingPeaks need the closed api.auuki.com backend, so they are hidden and the API is never called (`HOSTED_API: false` in `src/models/config.js`). Rides stay in the browser; download the FIT of a ride and use Garmin > Import to put it in Garmin Connect.
 - **GitHub Pages.** Built for a sub path (`npm run build:pages`) and deployed by `.github/workflows/pages.yml`.
 - **Name and logo.** nofun, with a new logo.
-- **CI.** `npm run test:ci` skips the suites that already fail on Auuki's master (listed in `jest.ci.config.js`); `npm test` still runs everything.
+- **CI.** `npm run test:e2e` builds the app and checks every feature in a real browser (setup, plan, ride controls, timer, FTP tests, workout list and upload, editor, report, settings, profile, backup); the deploy waits for it; `KNOWN` in `e2e/smoke.py` lists the bugs it found that are not fixed yet. `npm run test:ci` skips the suites that already fail on Auuki's master (listed in `jest.ci.config.js`); `npm test` still runs everything.
 
 ## Use it
 

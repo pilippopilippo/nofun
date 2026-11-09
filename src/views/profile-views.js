@@ -80,7 +80,7 @@ class NofunProfile extends HTMLElement {
         }
     }
     render() {
-        if(this.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return; // don't wipe typing
+        if(this.contains(document.activeElement) && document.activeElement.tagName === 'INPUT' && document.activeElement.type !== 'file') return; // don't wipe typing
         const profile = loadProfile();
         const history = loadHistory();
         const st = this.backupStatus;
