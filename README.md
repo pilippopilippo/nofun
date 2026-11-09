@@ -8,7 +8,7 @@ An indoor cycling app in the browser for structured workouts on a smart trainer 
 
 ## Use it
 
-Chrome, Edge or Brave (Web Bluetooth). On Linux you may need `chrome://flags/#enable-experimental-web-platform-features`. A Tacx Flux is controlled through FTMS.
+Chrome, Edge or Brave (Web Bluetooth). On Linux you may need `chrome://flags/#enable-experimental-web-platform-features`.
 
 ## Credits
 
