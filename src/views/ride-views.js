@@ -87,7 +87,10 @@ const TEMPLATE = `
             </div>
         </div>
     </section>
-    <p class="nf-upnext" data-v="next-line" hidden>Up next <strong data-v="next"></strong></p>`;
+    <div class="nf-hero-foot">
+        <p class="nf-more">Elapsed <strong data-v="elapsed">0:00</strong><span>Speed <strong data-v="speed">–</strong> km/h</span><span>Distance <strong data-v="distance">–</strong> km</span><span>Energy <strong data-v="kcal">–</strong> kcal</span></p>
+        <p class="nf-upnext" data-v="next-line" hidden>Up next <strong data-v="next"></strong></p>
+    </div>`;
 
 class NofunRideHero extends HTMLElement {
     connectedCallback() {
@@ -114,6 +117,10 @@ class NofunRideHero extends HTMLElement {
         xf.sub('db:cadence', (v) => { this.v.cadence.textContent = num(v); }, signal);
         xf.sub('db:cadenceTarget', (v) => { this.v['cadence-target'].textContent = v > 0 ? `Target ${Math.round(v)}` : ''; }, signal);
         xf.sub('db:heartRate', (v) => { this.v.hr.textContent = num(v); }, signal);
+        xf.sub('db:elapsed', (v) => { this.v.elapsed.textContent = mmss(v || 0); }, signal);
+        xf.sub('db:speed', (v) => { this.v.speed.textContent = v > 0 ? (v * 3.6).toFixed(1) : '–'; }, signal);   // m/s
+        xf.sub('db:distance', (v) => { this.v.distance.textContent = v > 0 ? (v / 1000).toFixed(1) : '–'; }, signal); // m
+        xf.sub('db:kcal', (v) => { this.v.kcal.textContent = num(v); }, signal);
     }
     disconnectedCallback() {
         this.abortController?.abort();

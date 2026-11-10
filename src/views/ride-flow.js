@@ -5,7 +5,7 @@
 //        what nofun knows (FTP, weight), Start. "Ride screen" shows the riding layout
 //        without starting, to set the mode or the target first.
 // Done:  after Stop, a summary of the ride (time, averages, energy, distance, the work
-//        intervals against their target), the FIT file, Garmin import, back to the plan.
+//        intervals against their target), the FIT file, back to the plan.
 //
 // Nothing here replaces Auuki's controls: the bottom bar keeps start, pause, lap and stop.
 //
@@ -92,6 +92,8 @@ class NofunRideFlow extends HTMLElement {
         live('db:powerTarget', 'target');
         xf.sub('db:intervalIndex', (index) => this.onInterval(index), signal);
         xf.sub('db:watchStatus', (status) => this.onStatus(status), signal);
+        // back on Ride while stopped: the ready screen again (after a look at Ride screen)
+        xf.sub('db:page', (page) => { if(page === 'home' && this.status === 'stopped' && this.view === 'riding') this.show('ready'); }, signal);
         xf.sub('watch:stopped', () => this.onStopped(), signal);
         xf.sub('activity:add', (summary) => { this.activityId = summary?.id ?? null; }, signal);
         this.addEventListener('click', (e) => this.onClick(e), signal);
@@ -251,10 +253,9 @@ class NofunRideFlow extends HTMLElement {
             ${work.length ? `<section class="nf-box" aria-label="Work intervals"><h3 class="nf-h2">Work intervals: target and what you held</h3>
                 <div class="nf-scroll"><table class="nf-table"><thead><tr><th>#</th><th>Time</th><th>Target</th><th>Average</th><th>Cadence</th><th>Heart rate</th></tr></thead><tbody>${rows}</tbody></table></div></section>` : ''}
             <section class="nf-box nf-file" aria-label="Ride file">
-                <div><p class="nf-device-name">The ride is saved in this browser</p><p class="nf-muted">To add it to Garmin Connect, download the FIT and import it there.</p></div>
+                <div><p class="nf-device-name">The ride is saved in this browser</p><p class="nf-muted">Download the FIT to keep it or to import it in another app.</p></div>
                 <div class="nf-row">
                     <button type="button" class="nf-btn nf-light" data-action="download"${this.activityId ? '' : ' disabled'}>Download FIT</button>
-                    <a class="nf-btn" href="https://connect.garmin.com/modern/import-data" target="_blank" rel="noopener">Open Garmin import</a>
                     <button type="button" class="nf-btn" data-action="rides">All rides</button>
                 </div>
             </section>

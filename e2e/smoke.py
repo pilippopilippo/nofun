@@ -247,7 +247,7 @@ def main():
             names = page.evaluate("[...document.querySelectorAll('.workout--name')].map(e => e.textContent.trim())")
             assert names[:2] == ['Ramp test', '20-minute test'], names[:3]
             assert 'Ramp Test' not in names
-            page.locator('.workout--summary:has(.workout--name:text-is("20-minute test")) .workout--select').click()
+            click(page, 'workout-item:has(.workout--name:text-is("20-minute test")) .workout--name')
             page.wait_for_timeout(300)
             assert '20-minute test' in bottom_bar(page), bottom_bar(page)
             zwo = Path(tempfile.mkdtemp()) / 'e2e.zwo'
@@ -272,6 +272,39 @@ def main():
             click(page, 'nofun-library-tools [data-action="create"]')
             assert 'active' in (page.get_attribute('#view--workouts-editor', 'class') or '')
             click(page, '#link--workouts-workouts')
+        _()
+
+        @check('library: every card shows its graph, Ride opens the workout')
+        def _():
+            go(page, 'Library')
+            hidden = page.evaluate("[...document.querySelectorAll('#view--workouts-workouts workout-item')].filter(e => getComputedStyle(e).display !== 'none' && getComputedStyle(e.querySelector('.workout--full-info')).display === 'none').length")
+            assert hidden == 0, f'{hidden} cards without their graph'
+            click(page, 'workout-item:has(.workout--name:text-is("Ramp test")) .nf-card-ride')
+            assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
+            assert 'Ramp test' in bottom_bar(page), bottom_bar(page)
+            go(page, 'Library')
+        _()
+
+        @check('while riding, nofun stays nofun (no account UI, no Planned list)')
+        def _():
+            go(page, 'Ride')
+            state = page.evaluate("(() => { const f = document.querySelector('nofun-ride-flow'); return [f.hidden, f.view, f.status]; })()")
+            assert state[1] == 'ready' and not state[0], f'ride flow: {state}'
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"start\"]').click()")
+            page.wait_for_timeout(800)
+            assert page.evaluate("document.documentElement.classList.contains('no-hosted-api')")
+            go(page, 'Library')
+            assert not page.locator('.nf-planned').is_visible(), 'the Planned list came back'
+            go(page, 'You')
+            click(page, '#link--settings-profile')
+            assert not page.locator('auth-forms').is_visible() and not page.locator('#profile').is_visible(), 'account UI came back'
+            page.click('#watch-pause', force=True)
+            page.click('#watch-stop', force=True)
+            page.wait_for_timeout(200)
+            page.evaluate("document.querySelector('.nf-stop-dialog [data-action=\"end\"]').click()")
+            page.wait_for_timeout(500)
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"new\"]')?.click()")
+            go(page, 'Library')
         _()
 
         @check('workouts: editor and ride report open')

@@ -62,13 +62,26 @@ class NofunLibraryTools extends HTMLElement {
             this.query = e.target.value.trim().toLowerCase();
             this.apply();
         }, signal);
+        // a tap on a card picks the workout (Auuki's own select event); its Ride button also
+        // opens Ride. Options and Delete stay Auuki's.
+        // pointerup, like Auuki's own list: its items never get a click event
+        document.addEventListener('pointerup', (e) => {
+            if(e.button > 0) return;
+            const item = e.target.closest('workout-list workout-item');
+            if(!item || e.target.closest('.workout--options, .workout--actions, .workout--remove')) return;
+            xf.dispatch('ui:workout:select', item.id);
+            if(e.target.closest('.nf-card-ride')) xf.dispatch('ui:page-set', 'home');
+        }, signal);
         xf.sub('db:workout', (workout) => {
+            this.selectedId = workout?.id ?? null;
+            this.apply();
             const name = workout?.meta?.name;
             this.querySelector('.nf-lib-current').hidden = !name;
             this.querySelector('[data-v="current"]').textContent = name ?? '';
         }, signal);
         // the list re-renders on its own (uploads, deletes): filter again
         this.observer = new MutationObserver(() => this.apply());
+        this.selectedId = null;
         const list = this.list();
         if(list) this.observer.observe(list, { childList: true });
     }
@@ -96,6 +109,16 @@ class NofunLibraryTools extends HTMLElement {
         const items = [...(this.list()?.querySelectorAll('workout-item') ?? [])];
         let shown = 0;
         for(const item of items) {
+            if(!item.querySelector('.nf-card-ride')) {
+                const ride = document.createElement('button');
+                ride.type = 'button';
+                ride.className = 'nf-btn nf-primary nf-card-ride';
+                ride.textContent = 'Ride';
+                ride.setAttribute('aria-label', `Ride ${item.querySelector('.workout--name')?.textContent.trim() ?? 'this workout'}`);
+                (item.querySelector('.workout--full-info') ?? item).append(ride);
+            }
+            item.classList.toggle('nf-selected', item.id === this.selectedId);
+            item.setAttribute('aria-selected', String(item.id === this.selectedId));
             const ok = matches(item, this.filter, this.query);
             item.classList.toggle('nf-filtered-out', !ok);
             if(ok) shown++;

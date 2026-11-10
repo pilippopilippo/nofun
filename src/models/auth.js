@@ -392,7 +392,8 @@ function Auth(args = {}) {
         if(!hostedApi()) {
             _loggedIn = false;
             _hasApi = false;
-            document.body?.classList.add('no-hosted-api');
+            // on <html>: Auuki's theme switch rewrites body.className (it did, starting a ride)
+            document.documentElement.classList.add('no-hosted-api');
             xf.dispatch('action:auth', ':disabled');
             return {strava: false, intervals: false, trainingPeaks: false};
         }
