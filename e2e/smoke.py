@@ -16,14 +16,15 @@ DIST = ROOT / 'dist'
 TODAY = 'new Date(2026, 10, 14, 10, 0, 0).valueOf()'  # Saturday of week 3 of a plan started 26 October
 FIXED_DATE = f"""const __fixed = {TODAY}; const __Real = Date;
 globalThis.Date = class extends __Real {{ constructor(...a) {{ if (a.length === 0) super(__fixed); else super(...a); }} static now() {{ return __fixed; }} }};"""
-# Chromium for tests has no Web Bluetooth: without it nofun shows its "browser not supported"
-# banner, which a real user never sees in Chrome. A stub keeps the layout of a supported browser.
-BLUETOOTH_STUB = """if (!('bluetooth' in navigator)) Object.defineProperty(navigator, 'bluetooth', { value: {
+# Browsers under test have no usable Web Bluetooth (no adapter, or no API at all): nofun would
+# show its "browser not supported" banner, which a real user never sees in Chrome. The same stub
+# in every browser keeps the layout of a supported one.
+BLUETOOTH_STUB = """try { Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: {
     getAvailability: async () => true,
     requestDevice: async () => { throw new DOMException('No devices in tests', 'NotFoundError'); },
     getDevices: async () => [],
     addEventListener() {}, removeEventListener() {},
-} });"""
+} }); } catch (e) { /* keep the browser's own */ }"""
 ZWO = """<workout_file><author>e2e</author><name>E2E upload</name><sportType>bike</sportType><workout>
 <SteadyState Duration="300" Power="0.6"/></workout></workout_file>"""
 
@@ -88,13 +89,29 @@ def tab(page, name):
     page.evaluate(f"document.querySelector('.page.active nofun-ride-tabs [data-tab=\"{name}\"]').click()")
     page.wait_for_timeout(300)
 
+def launch(p):
+    """E2E_CHANNEL=chrome uses the Chrome already installed on the machine (GitHub's runners
+    have it): nothing to download. Without it, or if that Chrome can't start, Playwright's own
+    Chromium is used (python -m playwright install chromium)."""
+    channel = os.environ.get('E2E_CHANNEL')
+    if channel:
+        try:
+            browser = p.chromium.launch(channel=channel)
+            print(f'browser: {channel} {browser.version}')
+            return browser
+        except Exception as e:  # noqa: BLE001
+            print(f'browser: {channel} not usable ({str(e).splitlines()[0]}), using Playwright Chromium')
+    browser = p.chromium.launch()
+    print(f'browser: Playwright Chromium {browser.version}')
+    return browser
+
 def main():
     if not (DIST / 'index.html').exists():
         sys.exit('dist/ is missing: run npm run build:pages first')
     server, url = serve()
     errors = []
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = launch(p)
         context = browser.new_context(viewport={'width': 1280, 'height': 900}, accept_downloads=True)
         context.add_init_script(FIXED_DATE)
         context.add_init_script(BLUETOOTH_STUB)

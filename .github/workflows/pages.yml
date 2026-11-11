@@ -48,10 +48,18 @@ jobs:
         with:
           python-version: '3.12'
       - name: Playwright
+        # No --with-deps: it installs system packages with apt, which failed the job when
+        # Ubuntu's mirrors could not be resolved. The runner's own Chrome is used (E2E_CHANNEL);
+        # Playwright's Chromium is downloaded as a fallback, with retries.
         run: |
           pip install playwright==1.63.0
-          python -m playwright install --with-deps chromium
+          for attempt in 1 2 3; do
+            python -m playwright install chromium && break
+            echo "download failed (attempt $attempt), retrying in 20 s"; sleep 20
+          done || true
       - name: Every feature, in a real browser (e2e/smoke.py)
+        env:
+          E2E_CHANNEL: chrome
         run: python e2e/smoke.py
 
   build:
