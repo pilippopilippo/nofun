@@ -14,8 +14,11 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / 'dist'
 TODAY = 'new Date(2026, 10, 14, 10, 0, 0).valueOf()'  # Saturday of week 3 of a plan started 26 October
-FIXED_DATE = f"""const __fixed = {TODAY}; const __Real = Date;
-globalThis.Date = class extends __Real {{ constructor(...a) {{ if (a.length === 0) super(__fixed); else super(...a); }} static now() {{ return __fixed; }} }};"""
+# the clock starts on that Saturday and keeps running (a frozen clock made every lap 0 s long,
+# and Auuki drops laps of 0 s)
+FIXED_DATE = f"""const __fixed = {TODAY}; const __start = performance.now(); const __Real = Date;
+const __now = () => __fixed + (performance.now() - __start);
+globalThis.Date = class extends __Real {{ constructor(...a) {{ if (a.length === 0) super(__now()); else super(...a); }} static now() {{ return __now(); }} }};"""
 # Browsers under test have no usable Web Bluetooth (no adapter, or no API at all): nofun would
 # show its "browser not supported" banner, which a real user never sees in Chrome. The same stub
 # in every browser keeps the layout of a supported one.
@@ -349,6 +352,66 @@ def main():
             assert page.locator('#view--workouts-report laps-list').count() == 1
             tab(page, 'library')
             assert page.locator('#home-page nofun-ride-tabs').count() == 0, 'Ride still has a tab row'
+        _()
+
+        @check('rides: one card per ride, Download FIT, Delete asks first')
+        def _():
+            go(page, 'Library')
+            tab(page, 'report')
+            rows = page.locator('#view--workouts-report activity-item.nf-ride')
+            n = rows.count()
+            assert n >= 1, 'no ride listed'
+            first = rows.first
+            assert first.locator('.activity--name').inner_text().strip(), 'a ride without its name'
+            meta = first.locator('.nf-ride-meta').inner_text()
+            assert ' · ' in meta and ('min' in meta or ' s' in meta), meta
+            assert first.locator('.action--intervals').is_hidden() and first.locator('.action--strava').is_hidden(), 'account buttons shown'
+            with page.expect_download() as download:
+                click(page, '#view--workouts-report activity-item.nf-ride:first-child .action--download')
+            assert download.value.suggested_filename.endswith('.fit'), download.value.suggested_filename
+            assert first.locator('.nf-ride-confirm').is_hidden(), 'Delete without asking'
+            click(page, '#view--workouts-report activity-item.nf-ride:first-child .nf-ride-delete')
+            assert first.locator('.nf-ride-confirm').is_visible(), 'no confirmation for Delete'
+            click(page, '#view--workouts-report activity-item.nf-ride:first-child .nf-ride-confirm')
+            page.wait_for_timeout(300)
+            assert rows.count() == n - 1, f'{rows.count()} rides after deleting one of {n}'
+        _()
+
+        @check('rides: the laps table, header and rows in the same columns, no empty sensor columns')
+        def _():
+          try:
+            # a short ride with one skipped interval, so this ride has a lap
+            go(page, 'Ride')
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"start\"]')?.click()")
+            page.wait_for_timeout(3000)
+            page.evaluate("document.querySelector('nofun-ride-hero [data-action=\"skip\"]').click()")
+            page.wait_for_timeout(1500)
+            go(page, 'Library')
+            tab(page, 'report')
+            laps = page.locator('#view--workouts-report .lap--item')
+            info = page.evaluate("(() => { const f = document.querySelector('nofun-ride-flow'); return [f.view, f.status, document.querySelectorAll('.lap--item').length, document.querySelector('nofun-ride-hero [data-v=\"left\"]').textContent]; })()")
+            assert laps.count() == 1, f'this ride has one lap so far, the table shows {laps.count()} {info}'
+            assert page.locator('#view--workouts-report .nf-laps-empty').is_hidden()
+            shape = page.evaluate("""(() => {
+                const visible = (els) => [...els].filter(e => getComputedStyle(e).display !== 'none');
+                const head = visible(document.querySelectorAll('#view--workouts-report .lap--header--item'));
+                const row = visible(document.querySelector('#view--workouts-report .lap--item--inner').children);
+                const lefts = (els) => els.map(e => Math.round(e.getBoundingClientRect().left));
+                const h = document.querySelector('#view--workouts-report .laps--header');
+                const r = document.querySelector('#view--workouts-report .lap--item--inner');
+                const css = (e) => [getComputedStyle(e).display, getComputedStyle(e).gridTemplateColumns, Math.round(e.getBoundingClientRect().left)].join(' ');
+                return { head: head.map(e => e.textContent.trim()), headLeft: lefts(head), rowLeft: lefts(row), css: [css(h), css(r), document.querySelectorAll('#view--workouts-report .laps--header').length, document.querySelectorAll('#view--workouts-report .lap--item--inner').length] };
+            })()""")
+            assert shape['head'] == ['#', 'Time', 'Power', 'Cadence', 'Heart rate'], shape['head']
+            assert shape['headLeft'] == shape['rowLeft'], f"columns not aligned: {shape['headLeft']} vs {shape['rowLeft']} {shape['css']}"
+          finally:
+            go(page, 'Ride')
+            page.click('#watch-pause', force=True)
+            page.click('#watch-stop', force=True)
+            page.wait_for_timeout(200)
+            page.evaluate("document.querySelector('.nf-stop-dialog[open], .nf-stop-dialog') && document.querySelector('.nf-stop-dialog [data-action=\"end\"]').click()")
+            page.wait_for_timeout(500)
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"new\"]')?.click()")
         _()
 
         @check('settings: options and devices are there, More sensors opens')
