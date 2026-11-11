@@ -38,6 +38,7 @@
             </div>
 
             <div id="home-page" class="page active" page="home">
+                <nofun-ride-tabs></nofun-ride-tabs>
                 <nofun-ramp-result></nofun-ramp-result>
                 <nofun-test-status class="nf-test-status"></nofun-test-status>
                 <nofun-ride-flow class="nf-ride-flow"></nofun-ride-flow>
@@ -394,6 +395,7 @@
             </div> <!-- end page-home -->
 
             <div id="workouts-page" class="page" page="workouts">
+                <nofun-ride-tabs></nofun-ride-tabs>
                 <div class="library--switch--group">
                     <navigation-action
                         id="link--workouts-workouts"
@@ -1670,8 +1672,10 @@
                                   prop="page"
                                   effect="page-set"
                                   param="home">
-                            <svg class="menu--btn--icon" width="24" height="24">
-                                <use href="#icon--home"></use>
+                            <svg class="menu--btn--icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="5.5" cy="16.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                                <circle cx="18.5" cy="16.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                                <path d="M5.5 16.5L9.5 8h5l4 8.5M9.5 8l3.5 8.5M8 5h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
                             <div class="menu--btn--label">Ride</div>
                         </page-btn>
@@ -1690,8 +1694,9 @@
                                   prop="page"
                                   effect="page-set"
                                   param="settings">
-                            <svg class="menu--btn--icon" width="24" height="24">
-                                <use href="#icon--settings"></use>
+                            <svg class="menu--btn--icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                                <path d="M4 20.5c0-3.6 3.6-5.5 8-5.5s8 1.9 8 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
                             </svg>
                             <div class="menu--btn--label">You</div>
                         </page-btn>

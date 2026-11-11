@@ -90,6 +90,10 @@ const TEMPLATE = `
     <div class="nf-hero-foot">
         <p class="nf-more">Elapsed <strong data-v="elapsed">0:00</strong><span>Speed <strong data-v="speed">–</strong> km/h</span><span>Distance <strong data-v="distance">–</strong> km</span><span>Energy <strong data-v="kcal">–</strong> kcal</span></p>
         <p class="nf-upnext" data-v="next-line" hidden>Up next <strong data-v="next"></strong></p>
+        <div class="nf-steps-nav">
+            <button type="button" class="nf-btn" data-action="back" aria-label="Back to the start of the previous interval"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3v12M15 3L7 9l8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>Previous</button>
+            <button type="button" class="nf-btn" data-action="skip" aria-label="Skip to the next interval">Skip<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M14 3v12M3 3l8 6-8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg></button>
+        </div>
     </div>`;
 
 class NofunRideHero extends HTMLElement {
@@ -117,6 +121,11 @@ class NofunRideHero extends HTMLElement {
         xf.sub('db:cadence', (v) => { this.v.cadence.textContent = num(v); }, signal);
         xf.sub('db:cadenceTarget', (v) => { this.v['cadence-target'].textContent = v > 0 ? `Target ${Math.round(v)}` : ''; }, signal);
         xf.sub('db:heartRate', (v) => { this.v.hr.textContent = num(v); }, signal);
+        this.addEventListener('click', (e) => {
+            const action = e.target.closest('[data-action]')?.dataset.action;
+            if(action === 'skip') xf.dispatch('ui:watchLap');
+            if(action === 'back') xf.dispatch('ui:watchBack');
+        }, signal);
         xf.sub('db:elapsed', (v) => { this.v.elapsed.textContent = mmss(v || 0); }, signal);
         xf.sub('db:speed', (v) => { this.v.speed.textContent = v > 0 ? (v * 3.6).toFixed(1) : '–'; }, signal);   // m/s
         xf.sub('db:distance', (v) => { this.v.distance.textContent = v > 0 ? (v / 1000).toFixed(1) : '–'; }, signal); // m

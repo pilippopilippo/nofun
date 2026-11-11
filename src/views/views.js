@@ -19,6 +19,7 @@ import './plan-views.js';
 import './ride-views.js';
 import './ride-flow.js';
 import './library-views.js';
+import './ride-tabs.js';
 
 function start() {
     console.log('start views.');

@@ -76,10 +76,17 @@ def click(page, selector):
 TABS = {'Plan': 'plan', 'Ride': 'home', 'Workouts': 'workouts', 'Library': 'workouts', 'Settings': 'settings', 'You': 'settings'}
 
 def go(page, label):
-    page.click(f'#{TABS[label]}-tab-btn', force=True)
+    if label in ('Library', 'Workouts'):  # a tab of Ride
+        page.evaluate("document.querySelector('nofun-ride-tabs [data-tab=\"library\"]').click()")
+    else:
+        page.click(f'#{TABS[label]}-tab-btn', force=True)
     page.wait_for_timeout(300)
     active = page.evaluate("document.querySelector('.page.active')?.getAttribute('page')")
     assert active == TABS[label], f'{label}: active page is {active}'
+
+def tab(page, name):
+    page.evaluate(f"document.querySelector('.page.active nofun-ride-tabs [data-tab=\"{name}\"]').click()")
+    page.wait_for_timeout(300)
 
 def main():
     if not (DIST / 'index.html').exists():
@@ -98,11 +105,11 @@ def main():
         page.goto(url, wait_until='load')
         page.wait_for_timeout(1500)
 
-        @check('opens on the setup, menu Plan · Ride · Library · You')
+        @check('opens on the setup, menu Plan · Ride · You')
         def _():
             assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'plan'
-            labels = page.evaluate("[...document.querySelectorAll('.menu--btn--label')].map(e => e.textContent.trim())")
-            assert labels == ['Plan', 'Ride', 'Library', 'You'], labels
+            labels = page.evaluate("[...document.querySelectorAll('.menu--btn')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.textContent.trim())")
+            assert labels == ['Plan', 'Ride', 'You'], labels
             assert text(page, 'nofun-plan .nf-h1') == 'About you'
         _()
 
@@ -216,7 +223,15 @@ def main():
             elapsed = text(page, '#elapsed-time')
             assert elapsed not in ('', '--:--:--'), elapsed
             assert text(page, 'nofun-ride-hero [data-v="left"]') != '–:––', 'interval time left not shown'
-            page.click('#watch-lap')
+            left = lambda: text(page, 'nofun-ride-hero [data-v="left"]')
+            first = left()
+            click(page, 'nofun-ride-hero [data-action="skip"]')
+            page.wait_for_timeout(1200)
+            skipped = left()
+            assert skipped != first and skipped.startswith(('1:5', '2:0')), f'Skip: {first} -> {skipped}'
+            click(page, 'nofun-ride-hero [data-action="back"]')
+            page.wait_for_timeout(1200)
+            assert left().startswith(('9:5', '10:0')), f'Previous: {left()}'
             page.click('#watch-pause')
             page.wait_for_timeout(1200)
             paused = text(page, '#elapsed-time')
@@ -271,7 +286,7 @@ def main():
             page.fill('nofun-library-tools input[name="nf-search"]', '')
             click(page, 'nofun-library-tools [data-action="create"]')
             assert 'active' in (page.get_attribute('#view--workouts-editor', 'class') or '')
-            click(page, '#link--workouts-workouts')
+            tab(page, 'library')
         _()
 
         @check('library: every card shows its graph, Ride opens the workout')
@@ -307,13 +322,16 @@ def main():
             go(page, 'Library')
         _()
 
-        @check('workouts: editor and ride report open')
+        @check('ride tabs: Library, Editor, Report, back to Ride')
         def _():
-            page.click('#link--workouts-editor')
-            page.wait_for_timeout(300)
-            page.click('#link--workouts-report')
-            page.wait_for_timeout(300)
-            page.click('#link--workouts-workouts')
+            go(page, 'Ride')
+            for name, view in [('library', 'view--workouts-workouts'), ('editor', 'view--workouts-editor'), ('report', 'view--workouts-report')]:
+                tab(page, name)
+                assert 'active' in (page.get_attribute(f'#{view}', 'class') or ''), name
+                current = page.evaluate("document.querySelector('.page.active nofun-ride-tabs .nf-tab.active')?.dataset.tab")
+                assert current == name, (name, current)
+            tab(page, 'ride')
+            assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
         _()
 
         @check('settings: options and devices are there, More sensors opens')

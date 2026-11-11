@@ -381,13 +381,12 @@ class Watch {
             let intervals     = self.intervals;
             let lessIntervals = (i - 1) >= 0;
 
-            if(lessIntervals) {
-                i -= 1;
-                s  = 0;
+            // nofun: at the first interval Back restarts it (it used to do nothing)
+            i = lessIntervals ? i - 1 : 0;
+            s = 0;
 
-                self.nextInterval(intervals, i, s);
-                self.nextStep(intervals, i, s);
-            }
+            self.nextInterval(intervals, i, s);
+            self.nextStep(intervals, i, s);
         } else {
             xf.dispatch('watch:lap');
             xf.dispatch('watch:lapTime', 0);
