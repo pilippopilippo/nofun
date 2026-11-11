@@ -102,7 +102,11 @@ class NofunLibraryTools extends HTMLElement {
         }
         const action = event.target.closest('[data-action]')?.dataset.action;
         if(action === 'upload') document.querySelector('#view--workouts-workouts input[type="file"], #workouts-page input[type="file"]')?.click();
-        if(action === 'create') xf.dispatch('action:nav', 'workouts:editor');
+        if(action === 'create') {
+            const editor = document.querySelector('.nf-create');
+            editor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            editor?.querySelector('input')?.focus({ preventScroll: true });
+        }
         if(action === 'ride') xf.dispatch('ui:page-set', 'home');
     }
     apply() {

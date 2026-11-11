@@ -1,18 +1,14 @@
 //
-// Ride has tabs: Ride, Library, Editor, Report
-//
-// Library, Editor and Report are Auuki's workouts page and its three views; the same tab
-// row sits on top of Ride and of that page, so they read as one section. Nothing moves in
-// the DOM: a tab sets the page and the view with Auuki's own events.
+// Library has two tabs: Workouts (the list, then the editor to create one) and Rides
+// (your rides, then the report of this ride). They are Auuki's workouts page and its
+// views, set with Auuki's own events.
 //
 
 import { xf } from '../functions.js';
 
 const TABS = [
-    { id: 'ride', label: 'Ride', page: 'home' },
-    { id: 'library', label: 'Library', page: 'workouts', view: 'workouts:workouts' },
-    { id: 'editor', label: 'Editor', page: 'workouts', view: 'workouts:editor' },
-    { id: 'report', label: 'Report', page: 'workouts', view: 'workouts:report' },
+    { id: 'library', label: 'Workouts', page: 'workouts', view: 'workouts:workouts' },
+    { id: 'report', label: 'Rides', page: 'workouts', view: 'workouts:report' },
 ];
 
 // shared by every <nofun-ride-tabs>
@@ -22,7 +18,7 @@ class NofunRideTabs extends HTMLElement {
     connectedCallback() {
         this.abortController = new AbortController();
         const signal = { signal: this.abortController.signal };
-        this.innerHTML = `<nav class="nf-tabs" aria-label="Ride">${TABS.map((t) =>
+        this.innerHTML = `<nav class="nf-tabs" aria-label="Library">${TABS.map((t) =>
             `<button type="button" class="nf-tab" data-tab="${t.id}">${t.label}</button>`).join('')}</nav>`;
         this.addEventListener('click', (e) => {
             const tab = TABS.find((t) => t.id === e.target.closest('[data-tab]')?.dataset.tab);
@@ -38,7 +34,7 @@ class NofunRideTabs extends HTMLElement {
         this.abortController?.abort();
     }
     draw() {
-        const active = state.page === 'workouts' ? (TABS.find((t) => t.view === state.view)?.id ?? 'library') : 'ride';
+        const active = TABS.find((t) => t.view === state.view)?.id ?? 'library';
         this.querySelectorAll('[data-tab]').forEach((b) => {
             const on = b.dataset.tab === active;
             b.classList.toggle('active', on);

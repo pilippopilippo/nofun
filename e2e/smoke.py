@@ -122,11 +122,11 @@ def main():
         page.goto(url, wait_until='load')
         page.wait_for_timeout(1500)
 
-        @check('opens on the setup, menu Plan · Ride · You')
+        @check('opens on the setup, menu Plan · Ride · Library · You')
         def _():
             assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'plan'
             labels = page.evaluate("[...document.querySelectorAll('.menu--btn')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.textContent.trim())")
-            assert labels == ['Plan', 'Ride', 'You'], labels
+            assert labels == ['Plan', 'Ride', 'Library', 'You'], labels
             assert text(page, 'nofun-plan .nf-h1') == 'About you'
         _()
 
@@ -302,8 +302,8 @@ def main():
             assert visible() and all('Chili' in n for n in visible()), visible()
             page.fill('nofun-library-tools input[name="nf-search"]', '')
             click(page, 'nofun-library-tools [data-action="create"]')
-            assert 'active' in (page.get_attribute('#view--workouts-editor', 'class') or '')
-            tab(page, 'library')
+            page.wait_for_timeout(600)
+            assert page.evaluate("document.activeElement?.closest('.nf-create') !== null"), 'Create workout did not reach the editor'
         _()
 
         @check('library: every card shows its graph, Ride opens the workout')
@@ -339,16 +339,16 @@ def main():
             go(page, 'Library')
         _()
 
-        @check('ride tabs: Library, Editor, Report, back to Ride')
+        @check('library tabs: Workouts with the editor at the end, Rides with your rides and the report')
         def _():
-            go(page, 'Ride')
-            for name, view in [('library', 'view--workouts-workouts'), ('editor', 'view--workouts-editor'), ('report', 'view--workouts-report')]:
-                tab(page, name)
-                assert 'active' in (page.get_attribute(f'#{view}', 'class') or ''), name
-                current = page.evaluate("document.querySelector('.page.active nofun-ride-tabs .nf-tab.active')?.dataset.tab")
-                assert current == name, (name, current)
-            tab(page, 'ride')
-            assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
+            go(page, 'Library')
+            assert page.locator('#view--workouts-workouts #view--workouts-editor').is_visible(), 'no editor under the workouts'
+            tab(page, 'report')
+            assert 'active' in (page.get_attribute('#view--workouts-report', 'class') or '')
+            assert page.locator('#view--workouts-report activity-list').count() == 1, 'your rides are not in Rides'
+            assert page.locator('#view--workouts-report laps-list').count() == 1
+            tab(page, 'library')
+            assert page.locator('#home-page nofun-ride-tabs').count() == 0, 'Ride still has a tab row'
         _()
 
         @check('settings: options and devices are there, More sensors opens')

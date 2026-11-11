@@ -38,7 +38,6 @@
             </div>
 
             <div id="home-page" class="page active" page="home">
-                <nofun-ride-tabs></nofun-ride-tabs>
                 <nofun-ramp-result></nofun-ramp-result>
                 <nofun-test-status class="nf-test-status"></nofun-test-status>
                 <nofun-ride-flow class="nf-ride-flow"></nofun-ride-flow>
@@ -419,7 +418,122 @@
                     >Ride report
                     </navigation-action>
                 </div>
-                <workout-editor id="view--workouts-editor" class="sub-tab">
+                
+
+                <!-- ride-report -->
+                <div id="view--workouts-report" class="ride-report sub-tab">
+                    <div class="list--sub-section">
+                        <div class="list--row--outer">
+                            <div class="list--row--inner list--heading--cont">
+                                <h2 class="list--sub-heading">Your rides</h2>
+                            </div>
+                        </div>
+                        <activity-list class="activity--list">
+                        </activity-list>
+                    </div> <!-- end activities -->
+                    <h2 class="list--sub-heading nf-report-heading">This ride: time in zones (%)</h2>
+
+                    <power-in-zone id="power-in-zone">
+                        <div class="power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar zone-one"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar  zone-two"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar zone-three"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar zone-four"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar  zone-five"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar zone-six"></div>
+                        </div>
+                        <div class="power--zone power--zone--item">
+                            <div class="power--zone-value">0</div>
+                            <div class="power--zone-bar zone-seven"></div>
+                        </div>
+                        <div class="power--unit power--zone--item chrome-bg">%</div>
+                    </power-in-zone>
+
+                    <h2 class="list--sub-heading nf-report-heading">This ride: laps</h2>
+                    <laps-list>
+                        <div class="laps--header">
+                            <div class="lap--header--item"></div>
+                            <div class="lap--header--item">Time</div>
+                            <div class="lap--header--item">Power</div>
+                            <div class="lap--header--item">Cadence</div>
+                            <div class="lap--header--item">HR</div>
+                            <div class="lap--header--item">SmO2</div>
+                            <div class="lap--header--item">THb</div>
+                            <div class="lap--header--item">Core</div>
+                            <div class="lap--header--item">Skin</div>
+                        </div>
+                        <div class="laps--cont"></div>
+                    </laps-list>
+                </div> <!-- end ride-report -->
+
+                <!-- workout-list -->
+                <div id="view--workouts-workouts" class="workout-list sub-tab active">
+                    <nofun-library-tools></nofun-library-tools>
+                    <div class="list--sub-section nf-planned">
+                        <div class="list--row--outer">
+                            <div class="list--row--inner list--heading--cont control">
+                                <h2 class="list--sub-heading">Planned</h2>
+                                <div class="planned--actions">
+                                    <view-action
+                                        class="activity--action"
+                                        action=":intervals:wod"
+                                        topic=":planned">
+                                        <svg class="activity--icon intervals--icon">
+                                            <use href="#icon--intervals" />
+                                        </svg>
+                                        <div class="connection-icon-switch--indicator none intervals"></div>
+                                    </view-action>
+                                    <!--
+                                    <view-action
+                                        class="activity--action"
+                                        action=":trainingPeaks:wod"
+                                        topic=":planned">
+                                        <div class="tp-logo--icon">TP</div>
+                                        <div class="connection-icon-switch--indicator none tp"></div>
+                                    -->
+                                    </view-action>
+                                </div> <!-- end planned--actions -->
+                            </div> <!-- end list--heading--cont -->
+                        </div>
+                        <planned-list class="workouts--list planned--list">
+                        </planned-list>
+                    </div> <!-- list--sub-section -->
+
+                    <!-- activites -->
+                    
+
+                    <div class="list--sub-section">
+                        <div class="list--row--outer">
+                            <div class="list--row--inner list--heading--cont">
+                                <h2 class="list--sub-heading">Library</h2>
+                            </div>
+                        </div>
+                        <div class="buildin-workouts">
+                            <workout-list id="workout-list" class="workout-list list" prop="workouts" metric="ftp">
+                            </workout-list>
+                        </div> <!-- end list--heading--cont -->
+                    </div>  <!-- list--sub-section -->
+
+
+                    <div class="list--sub-section nf-create">
+                        <h2 class="list--sub-heading">Create a workout</h2>
+                        <workout-editor id="view--workouts-editor" class="sub-tab nf-editor">
                     <div class="editor-cont">
                         <form action="">
                             <div class="editor--meta">
@@ -504,115 +618,7 @@
                         </form>
                     </div> <!-- end editor--cont -->
                 </workout-editor>
-
-                <!-- ride-report -->
-                <div id="view--workouts-report" class="ride-report sub-tab">
-
-                    <power-in-zone id="power-in-zone">
-                        <div class="power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar zone-one"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar  zone-two"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar zone-three"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar zone-four"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar  zone-five"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar zone-six"></div>
-                        </div>
-                        <div class="power--zone power--zone--item">
-                            <div class="power--zone-value">0</div>
-                            <div class="power--zone-bar zone-seven"></div>
-                        </div>
-                        <div class="power--unit power--zone--item chrome-bg">%</div>
-                    </power-in-zone>
-
-                    <laps-list>
-                        <div class="laps--header">
-                            <div class="lap--header--item"></div>
-                            <div class="lap--header--item">Time</div>
-                            <div class="lap--header--item">Power</div>
-                            <div class="lap--header--item">Cadence</div>
-                            <div class="lap--header--item">HR</div>
-                            <div class="lap--header--item">SmO2</div>
-                            <div class="lap--header--item">THb</div>
-                            <div class="lap--header--item">Core</div>
-                            <div class="lap--header--item">Skin</div>
-                        </div>
-                        <div class="laps--cont"></div>
-                    </laps-list>
-                </div> <!-- end ride-report -->
-
-                <!-- workout-list -->
-                <div id="view--workouts-workouts" class="workout-list sub-tab active">
-                    <nofun-library-tools></nofun-library-tools>
-                    <div class="list--sub-section nf-planned">
-                        <div class="list--row--outer">
-                            <div class="list--row--inner list--heading--cont control">
-                                <h2 class="list--sub-heading">Planned</h2>
-                                <div class="planned--actions">
-                                    <view-action
-                                        class="activity--action"
-                                        action=":intervals:wod"
-                                        topic=":planned">
-                                        <svg class="activity--icon intervals--icon">
-                                            <use href="#icon--intervals" />
-                                        </svg>
-                                        <div class="connection-icon-switch--indicator none intervals"></div>
-                                    </view-action>
-                                    <!--
-                                    <view-action
-                                        class="activity--action"
-                                        action=":trainingPeaks:wod"
-                                        topic=":planned">
-                                        <div class="tp-logo--icon">TP</div>
-                                        <div class="connection-icon-switch--indicator none tp"></div>
-                                    -->
-                                    </view-action>
-                                </div> <!-- end planned--actions -->
-                            </div> <!-- end list--heading--cont -->
-                        </div>
-                        <planned-list class="workouts--list planned--list">
-                        </planned-list>
-                    </div> <!-- list--sub-section -->
-
-                    <!-- activites -->
-                    <div class="list--sub-section">
-                        <div class="list--row--outer">
-                            <div class="list--row--inner list--heading--cont">
-                                <h2 class="list--sub-heading">Activities</h2>
-                            </div>
-                        </div>
-                        <activity-list class="activity--list">
-                        </activity-list>
-                    </div> <!-- end activities -->
-
-                    <div class="list--sub-section">
-                        <div class="list--row--outer">
-                            <div class="list--row--inner list--heading--cont">
-                                <h2 class="list--sub-heading">Library</h2>
-                            </div>
-                        </div>
-                        <div class="buildin-workouts">
-                            <workout-list id="workout-list" class="workout-list list" prop="workouts" metric="ftp">
-                            </workout-list>
-                        </div> <!-- end list--heading--cont -->
-                    </div>  <!-- list--sub-section -->
-
-
+                    </div>
                     <div class="workout-loader">
                         <h2 class="page--heading">Load workout:</h2>
                         <div class="file-btn">
@@ -1684,8 +1690,8 @@
                                   prop="page"
                                   effect="page-set"
                                   param="workouts">
-                            <svg class="menu--btn--icon" width="24" height="24">
-                                <use href="#icon--list"></use>
+                            <svg class="menu--btn--icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 5.2l3.8-1 3 15.5-3.8 1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
                             </svg>
                             <div class="menu--btn--label">Library</div>
                         </page-btn>

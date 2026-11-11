@@ -12,7 +12,7 @@ Before riding, Ride shows the workout, the devices (connect with one tap) and St
 
 ## Library and You
 
-Ride has four tabs: Ride, Library, Editor and Report; the menu is Plan · Ride · You. While riding, Previous and Skip move one interval at a time.
+The menu is Plan · Ride · Library · You. Library has two tabs: Workouts (the list, then the editor to create one) and Rides (your rides, then the report of this ride). While riding, Previous and Skip move one interval at a time.
 
 Library: search by name or type, filters (FTP tests, Auuki classics, yours), Upload .zwo, Create workout (the editor), and the workout you picked with Ride it. You: Profile first (name, weight, FTP, both FTP tests and their history, your data and backups), then Devices and options. Stop asks for confirmation inside the app.
 

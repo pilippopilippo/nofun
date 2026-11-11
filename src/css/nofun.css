@@ -628,15 +628,12 @@ nofun-ride-tabs { display: block; flex: 0 0 auto; }
 .nf-tab.active { background: var(--nf-text); color: var(--nf-ground); }
 .nf-tab:focus-visible { outline: 2px solid var(--nf-text); outline-offset: 2px; }
 #workouts-page > .library--switch--group { display: none; }
-nofun-ride-flow { top: 52px; }
+nofun-ride-flow { top: 0; }
 /* the other tab rows (You): the same shape, every tab as wide as the others */
 .page:not(#home-page) .header--tab--group, .page:not(#home-page) .page--header { height: 44px; }
 .page:not(#home-page) .library--switch--heading { justify-self: stretch; align-self: stretch; width: auto; min-height: 0; margin: 0; padding: 0 8px; border-radius: 7px; box-sizing: border-box; }
 
-/* the menu: Plan · Ride · You; Ride also when a tab of Ride is open */
-#workouts-tab-btn { display: none !important; }
-.wrapper:has(#workouts-page.active) #home-tab-btn { color: var(--nf-text); }
-.wrapper:has(#workouts-page.active) #home-tab-btn .menu--btn--label { color: var(--nf-text); font-weight: 600; }
+/* the menu: Plan · Ride · Library · You */
 .wrapper > .fixed-bottom svg { display: block; flex: none; }
 .wrapper > .fixed-bottom .menu--btn { line-height: 1; color: var(--nf-muted); }
 .wrapper > .fixed-bottom .menu--btn.active { color: var(--nf-text); }
@@ -685,9 +682,7 @@ workout-editor .editor--row { min-height: 48px; align-items: center; }
 /* phones on their side keep Auuki's own Ride layout: no tab row there, and the Library button
    comes back in the menu so its tabs stay reachable */
 @media (min-width: 500px) and (max-height: 432px) and (orientation: landscape) {
-    #home-page > nofun-ride-tabs { display: none; }
     nofun-ride-flow { top: 0; }
-    #workouts-tab-btn { display: flex !important; }
 }
 
 /* Library cards: content from the left edge, the hidden Delete panel really hidden */
@@ -701,3 +696,34 @@ workout-editor .editor--row { min-height: 48px; align-items: center; }
 /* Editor: labels on the left, above their field */
 .editor--label { display: block; width: 100%; text-align: left; }
 .editor--head, .editor--header { text-align: left; }
+
+
+/* ======================================================================================
+   Library: Workouts (list, then the editor) · Rides (your rides, then this ride's report)
+   ====================================================================================== */
+#view--workouts-workouts #view--workouts-editor { display: block !important; }
+.nf-create { max-width: 1280px; margin: 24px auto 0; padding: 0 16px; box-sizing: border-box; }
+.nf-create .list--sub-heading { padding: 12px 0 8px; }
+.nf-create .editor-cont { max-width: none; padding: 0; }
+
+/* Editor fields: one comfortable width, the description grows downwards only */
+.editor--meta { max-width: 600px; }
+.editor--input { max-width: 560px; }
+textarea.editor--input, .editor--description.editor--input {
+    width: 100%; max-width: 560px; min-height: 80px; max-height: 320px; resize: vertical;
+}
+.editor--meta { gap: 10px; }
+.editor--form--group { gap: 4px; }
+
+/* Rides: your rides first, then the report of this ride in the nofun type */
+.ride-report { max-width: 1280px; margin: 0 auto; padding: 0 16px 24px; box-sizing: border-box; font-family: 'Barlow', system-ui, sans-serif; }
+.nf-report-heading { display: block; margin: 20px 0 8px; text-align: left; }
+.ride-report power-in-zone { display: flex; gap: 8px; max-width: none; margin: 0; }
+.ride-report .power--zone--item { flex: 1 1 0; padding: 10px 0; border-radius: 10px; background: var(--nf-surface); text-align: center; }
+.ride-report .power--zone-value { font: 700 24px var(--nf-display); color: var(--nf-text); }
+.ride-report .power--unit { display: flex; align-items: center; justify-content: center; color: var(--nf-muted); font: 600 18px 'Barlow', system-ui, sans-serif; background: var(--nf-surface); }
+.ride-report laps-list { display: block; margin-top: 4px; }
+.ride-report .laps--header, .ride-report .lap--item, .ride-report .lap--cont { font: 500 16px 'Barlow', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.ride-report .lap--header--item { color: var(--nf-muted); font: 500 15px 'Barlow', system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
+.ride-report .activity--cont { max-width: none; }
+.editor--label, .editor--form--group > label { padding: 0; margin: 0; text-indent: 0; }
