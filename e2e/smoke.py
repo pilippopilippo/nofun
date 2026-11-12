@@ -243,6 +243,12 @@ def main():
             elapsed = text(page, '#elapsed-time')
             assert elapsed not in ('', '--:--:--'), elapsed
             assert text(page, 'nofun-ride-hero [data-v="left"]') != '–:––', 'interval time left not shown'
+            off = page.evaluate("""(() => {
+                const bar = document.querySelector('.fixed-bottom').getBoundingClientRect();
+                const mid = (r) => (r.top + r.bottom) / 2;
+                return [...document.querySelectorAll('.watch .control--btn')].filter(e => getComputedStyle(e).display !== 'none')
+                    .map(e => Math.abs(mid(e.querySelector('svg').getBoundingClientRect()) - mid(bar))); })()""")
+            assert off and max(off) <= 2, f'timer icons off centre by {off} px'
             left = lambda: text(page, 'nofun-ride-hero [data-v="left"]')
             first = left()
             click(page, 'nofun-ride-hero [data-action="skip"]')
@@ -305,8 +311,9 @@ def main():
             assert visible() and all('Chili' in n for n in visible()), visible()
             page.fill('nofun-library-tools input[name="nf-search"]', '')
             click(page, 'nofun-library-tools [data-action="create"]')
-            page.wait_for_timeout(600)
-            assert page.evaluate("document.activeElement?.closest('.nf-create') !== null"), 'Create workout did not reach the editor'
+            page.wait_for_timeout(400)
+            assert 'active' in (page.get_attribute('#view--workouts-editor', 'class') or ''), 'Create workout did not open Create'
+            tab(page, 'library')
         _()
 
         @check('library: every card shows its graph, Ride opens the workout')
@@ -342,14 +349,30 @@ def main():
             go(page, 'Library')
         _()
 
-        @check('library tabs: Workouts with the editor at the end, Rides with your rides and the report')
+        @check('library tabs: Workouts, Create (save lands in Yours), Rides')
         def _():
             go(page, 'Library')
-            assert page.locator('#view--workouts-workouts #view--workouts-editor').is_visible(), 'no editor under the workouts'
+            tabs = page.evaluate("[...document.querySelectorAll('.page.active nofun-ride-tabs .nf-tab')].map(e => e.textContent.trim())")
+            assert tabs == ['Workouts', 'Create', 'Rides'], tabs
+            tab(page, 'editor')
+            assert page.locator('#view--workouts-editor').is_visible()
+            labels = page.evaluate("[...document.querySelectorAll('.nf-editor-btn')].map(e => e.textContent.trim())")
+            assert labels == ['Add interval', 'Remove interval', 'Save to Workouts', 'Download .zwo'], labels
+            page.fill('#view--workouts-editor .editor--name, #view--workouts-editor input', 'E2E created')
+            click(page, '#view--workouts-editor .editor--save')
+            page.wait_for_timeout(800)
+            assert 'active' in (page.get_attribute('#view--workouts-workouts', 'class') or ''), 'Save did not go back to Workouts'
+            assert page.get_attribute('nofun-library-tools [data-filter="yours"]', 'aria-pressed') == 'true'
+            shown = page.evaluate("[...document.querySelectorAll('workout-item')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.querySelector('.workout--name').textContent.trim())")
+            assert 'E2E created' in shown, shown
+            click(page, 'nofun-library-tools [data-filter="all"]')
             tab(page, 'report')
-            assert 'active' in (page.get_attribute('#view--workouts-report', 'class') or '')
             assert page.locator('#view--workouts-report activity-list').count() == 1, 'your rides are not in Rides'
             assert page.locator('#view--workouts-report laps-list').count() == 1
+            inside = page.evaluate("""[...document.querySelectorAll('#view--workouts-report .power--zone-bar')].every(bar => {
+                const b = bar.getBoundingClientRect(), c = bar.closest('.power--zone--item').getBoundingClientRect();
+                return b.left >= c.left - 0.5 && b.right <= c.right + 0.5 && b.bottom <= c.bottom + 0.5; })""")
+            assert inside, 'a zone bar is drawn outside its card'
             tab(page, 'library')
             assert page.locator('#home-page nofun-ride-tabs').count() == 0, 'Ride still has a tab row'
         _()
@@ -419,6 +442,7 @@ def main():
             go(page, 'Settings')
             click(page, '#link--settings-settings')
             assert page.locator('.connection-switch--label:text-is("Trainer")').count() == 1
+            assert not page.locator('#ftp-settings').is_visible() and not page.locator('#weight-settings').is_visible(), 'FTP and weight twice in You'
             click(page, '.nf-more-sensors > summary')
             assert page.get_attribute('.nf-more-sensors', 'open') is not None
             assert page.locator('.option--name:text-is("Auto Start")').count() == 1

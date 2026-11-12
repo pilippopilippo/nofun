@@ -72,6 +72,15 @@ class NofunLibraryTools extends HTMLElement {
             xf.dispatch('ui:workout:select', item.id);
             if(e.target.closest('.nf-card-ride')) xf.dispatch('ui:page-set', 'home');
         }, signal);
+        // after Save in Create: back to Workouts, showing Yours, where the new one is
+        document.addEventListener('pointerup', (e) => {
+            if(!e.target.closest('.editor--save')) return;
+            setTimeout(() => {
+                xf.dispatch('action:nav', 'workouts:workouts');
+                this.setFilter('yours');
+                window.scrollTo({ top: 0 });
+            }, 400);
+        }, signal);
         xf.sub('db:workout', (workout) => {
             this.selectedId = workout?.id ?? null;
             this.apply();
@@ -95,19 +104,18 @@ class NofunLibraryTools extends HTMLElement {
     onClick(event) {
         const chip = event.target.closest('[data-filter]');
         if(chip) {
-            this.filter = chip.dataset.filter;
-            this.querySelectorAll('[data-filter]').forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
-            this.apply();
+            this.setFilter(chip.dataset.filter);
             return;
         }
         const action = event.target.closest('[data-action]')?.dataset.action;
         if(action === 'upload') document.querySelector('#view--workouts-workouts input[type="file"], #workouts-page input[type="file"]')?.click();
-        if(action === 'create') {
-            const editor = document.querySelector('.nf-create');
-            editor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            editor?.querySelector('input')?.focus({ preventScroll: true });
-        }
+        if(action === 'create') xf.dispatch('action:nav', 'workouts:editor');
         if(action === 'ride') xf.dispatch('ui:page-set', 'home');
+    }
+    setFilter(filter) {
+        this.filter = filter;
+        this.querySelectorAll('[data-filter]').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === filter)));
+        this.apply();
     }
     apply() {
         const items = [...(this.list()?.querySelectorAll('workout-item') ?? [])];

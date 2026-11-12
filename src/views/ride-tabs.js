@@ -1,13 +1,14 @@
 //
-// Library has two tabs: Workouts (the list, then the editor to create one) and Rides
-// (your rides, then the report of this ride). They are Auuki's workouts page and its
-// views, set with Auuki's own events.
+// Library has three tabs: Workouts (the list), Create (the editor; a saved workout goes to
+// Workouts, under Yours) and Rides (your rides, then the report of this ride). They are
+// Auuki's workouts page and its views, set with Auuki's own events.
 //
 
 import { xf } from '../functions.js';
 
 const TABS = [
     { id: 'library', label: 'Workouts', page: 'workouts', view: 'workouts:workouts' },
+    { id: 'editor', label: 'Create', page: 'workouts', view: 'workouts:editor' },
     { id: 'report', label: 'Rides', page: 'workouts', view: 'workouts:report' },
 ];
 

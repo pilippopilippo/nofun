@@ -682,6 +682,11 @@ class WorkoutEditor extends HTMLElement {
     }
     save() {
         this.editor.save();
+        // nofun: Auuki's Save only kept the workout inside the editor; now it lands in the
+        // library, through the same path as an uploaded .zwo
+        const name = (this.editor.getName() || 'New workout').trim();
+        const zwo = this.editor.format({format: 'zwo'});
+        xf.dispatch('ui:workout:upload', [new File([zwo], `${name}.zwo`, { type: 'application/xml' })]);
     }
     download() {
         this.editor.save();

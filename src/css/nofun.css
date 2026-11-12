@@ -794,3 +794,65 @@ html.no-hosted-api .nf-ride-actions .activity--action { display: none; }
 #view--workouts-report activity-item.nf-ride { max-width: none; margin: 8px 0; }
 #view--workouts-report power-in-zone { width: 100% !important; max-width: none !important; }
 #view--workouts-report .power--zone--item { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 64px; }
+
+
+/* ======================================================================================
+   Review of 12 November
+   ====================================================================================== */
+
+/* 1. Bottom bar: Auuki shows the timer buttons as inline-block, so each icon sat at the top
+   of its 44 px box. Shown buttons are flex boxes now, icon centred both ways. */
+.wrapper > .fixed-bottom .watch { display: flex; align-items: center; height: 100%; }
+.wrapper > .fixed-bottom .watch .control--btn:not([style*="none"]) {
+    display: inline-flex !important; align-items: center; justify-content: center; vertical-align: middle;
+}
+.wrapper > .fixed-bottom .watch .control--btn--icon { display: block; }
+
+/* 2. Create: one centred card, fields on a two-column grid, intervals under them,
+   buttons with words */
+#view--workouts-editor.nf-editor { max-width: 960px; margin: 16px auto 24px; padding: 0 16px; box-sizing: border-box; font-family: 'Barlow', system-ui, sans-serif; }
+#view--workouts-editor.nf-editor.active { display: block; }
+.nf-editor-head { margin-bottom: 16px; text-align: left; }
+.nf-editor-head p { margin: 4px 0 0; }
+#view--workouts-editor .editor-cont { max-width: none; margin: 0; padding: 24px; border-radius: 12px; background: var(--nf-surface); }
+#view--workouts-editor .editor--meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 20px;
+    max-width: none; padding: 0; background: transparent;
+}
+#view--workouts-editor .editor--form--group:has(textarea) { grid-column: 1 / -1; }
+#view--workouts-editor .editor--input { max-width: none; }
+#view--workouts-editor textarea.editor--input, #view--workouts-editor .editor--description.editor--input { max-width: none; min-height: 80px; max-height: 240px; resize: vertical; }
+#view--workouts-editor .editor--head, #view--workouts-editor .editor--header { margin: 24px 0 8px; padding: 0; background: transparent; }
+#view--workouts-editor .editor--table, #view--workouts-editor .editor--body { max-width: none; margin: 0; background: transparent; }
+.editor--controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.nf-editor-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
+    border: 1px solid var(--nf-line-strong); border-radius: 8px; background: transparent; color: var(--nf-text);
+    font: 600 15px 'Barlow', system-ui, sans-serif; cursor: pointer; width: auto; height: auto;
+}
+.nf-editor-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.nf-editor-btn:hover { border-color: var(--nf-text); }
+.nf-editor-btn.editor--save { border-color: transparent; background: var(--nf-text); color: var(--nf-ground); }
+.nf-editor-btn:focus-visible { outline: 2px solid var(--nf-text); outline-offset: 2px; }
+
+/* 3. Time in zones: Auuki draws each zone's share as a bar behind its value, but the card
+   was not its frame, so the bars showed up as coloured slivers under the cards. Each card
+   frames its bar now: the bar fills the card from the bottom by that zone's share. */
+#view--workouts-report .power--zone--item { position: relative; overflow: hidden; isolation: isolate; }
+#view--workouts-report .power--zone-bar { z-index: 0; opacity: 0.35; border-radius: 0; }
+#view--workouts-report .power--zone-value { position: relative; z-index: 1; }
+#view--workouts-report .power--zone--item:not(.power--unit)::after { position: relative; z-index: 1; }
+
+/* 4. You: name, weight and FTP live in Profile; Devices and options keeps devices, display
+   and options */
+.nf-dup[hidden] { display: none !important; }
+.nf-display-heading { display: block; max-width: 868px; margin: 16px auto 4px; padding: 0 16px; text-align: left; }
+#view--settings-settings .settings-btn-row { display: flex; justify-content: center; gap: 8px; max-width: 868px; margin: 0 auto 8px; padding: 0 16px; }
+#view--settings-settings .settings-switch-btn-cont {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--nf-line-strong); border-radius: 8px; cursor: pointer;
+}
+#view--settings-settings .settings-switch-bnt { font: 600 15px 'Barlow', system-ui, sans-serif; text-transform: none; letter-spacing: 0; color: var(--nf-text); }
+#view--settings-settings #measurement-btn::before { content: 'Units: '; color: var(--nf-muted); font-weight: 500; }
+#view--workouts-report laps-list:not(:has(.lap--item)) .laps--header { display: none !important; }
+#view--settings-settings .settings-btn-row > * { flex: 0 0 auto; width: auto; margin: 0; }
+#view--settings-settings #measurement-btn { text-transform: capitalize; }
