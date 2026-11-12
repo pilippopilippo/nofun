@@ -1,3 +1,4 @@
+import { sensorsInLaps } from '../ride-format.js';
 import { xf, exists, existance, validate, equals, isNumber, last, empty, avg, toFixed, formatDate, } from '../functions.js';
 import { formatTime } from '../utils.js';
 import { models } from '../models/models.js';
@@ -1013,6 +1014,8 @@ class LapsList extends DataView {
     }
     subs() {
         xf.reg(`${this.prop}`, this.onUpdate.bind(this), this.signal);
+        this.watchStatus = 'stopped';
+        xf.sub('db:watchStatus', this.onWatchStatus.bind(this), this.signal);
     }
     toLap(lap, index) {
         const duration = lap.totalElapsedTime;
@@ -1060,24 +1063,24 @@ class LapsList extends DataView {
                     </div>
                 </div>`;
     }
-    restore(laps) {
-        this.state = laps;
-        laps.forEach((lap, index) => this.render(lap, index+1));
-    }
+    // nofun: the table always shows the laps of this ride, newest first, drawn from db.laps
+    // (Auuki appended rows: rides piled up and Stop added the last lap twice). After Stop
+    // the session is reset: the table keeps that ride until the next one starts.
     onUpdate(propValue, db) {
-        if(empty(db.laps)) {
-            return;
-        } else if(this.isEmpty) {
-            this.restore(db.laps);
-            this.isEmpty = false;
-        } else {
-            this.updateState(db.laps);
-            this.render(last(db.laps), this.state.length);
-        }
-
+        if(empty(db.laps)) return;
+        this.draw(db.laps);
     }
-    render(lap, i) {
-        this.$lapsCont.insertAdjacentHTML('afterbegin', this.toLap(lap, i));
+    onWatchStatus(status) {
+        if(status === 'started' && this.watchStatus === 'stopped') this.draw([]);
+        this.watchStatus = status;
+    }
+    draw(laps) {
+        this.state = [...laps];
+        this.$lapsCont.innerHTML = laps.map((lap, i) => this.toLap(lap, i + 1)).reverse().join('');
+        const sensors = sensorsInLaps(laps);
+        for(const key of ['smo2', 'thb', 'core', 'skin']) {
+            this.classList.toggle(`nf-has-${key}`, sensors.includes(key));
+        }
     }
 }
 

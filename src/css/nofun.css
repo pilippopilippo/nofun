@@ -727,3 +727,70 @@ textarea.editor--input, .editor--description.editor--input {
 .ride-report .lap--header--item { color: var(--nf-muted); font: 500 15px 'Barlow', system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
 .ride-report .activity--cont { max-width: none; }
 .editor--label, .editor--form--group > label { padding: 0; margin: 0; text-indent: 0; }
+
+
+/* ---- Rides: one card per ride ---- */
+activity-list { display: block; }
+activity-item.nf-ride {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+    max-width: 1248px; margin: 8px auto; padding: 14px 18px; box-sizing: border-box;
+    border-radius: 12px; background: var(--nf-surface); color: var(--nf-text);
+    font-family: 'Barlow', system-ui, sans-serif; font-size: 16px; text-align: left;
+}
+activity-item.nf-ride p { margin: 0; }
+.nf-ride-main { flex: 1 1 260px; min-width: 0; }
+activity-item.nf-ride .activity--name { font: 600 19px/1.2 var(--nf-display); color: var(--nf-text); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nf-ride-meta, activity-item.nf-ride .activity--date, activity-item.nf-ride .activity--duration { color: var(--nf-muted); font: 500 15px 'Barlow', system-ui, sans-serif; }
+.nf-ride-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nf-ride-actions view-action.nf-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; cursor: pointer; user-select: none; }
+.nf-ride-confirm { display: none !important; border: 0; background: var(--nf-pi); color: var(--nf-ground); }
+activity-item.nf-ride.options .nf-ride-confirm { display: inline-flex !important; }
+activity-item.nf-ride.options .nf-ride-delete { font-size: 0; }
+activity-item.nf-ride.options .nf-ride-delete::after { content: 'Keep'; font-size: 16px; }
+html.no-hosted-api .nf-ride-actions .activity--action { display: none; }
+.nf-ride-actions .activity--action { position: relative; display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; }
+
+/* ---- Rides: the laps table, one grid for header and rows ---- */
+.ride-report laps-list { font-family: 'Barlow', system-ui, sans-serif; }
+.ride-report .laps--header, .ride-report .lap--item--inner {
+    display: grid; grid-auto-flow: column; grid-template-columns: 48px; grid-auto-columns: minmax(0, 1fr);
+    align-items: center; gap: 8px; padding: 0 16px; box-sizing: border-box; width: 100%; max-width: none; margin: 0;
+}
+.ride-report .laps--header { min-height: 36px; }
+.ride-report .lap--header--item { width: auto; text-align: left; color: var(--nf-muted); font: 500 15px 'Barlow', system-ui, sans-serif; text-transform: none; letter-spacing: 0; }
+.ride-report .lap--item { margin: 6px 0; padding: 0; border-radius: 10px; background: var(--nf-surface); }
+.ride-report .lap--item--inner { min-height: 48px; }
+.ride-report .lap--value { width: auto; text-align: left; font: 500 17px 'Barlow', system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--nf-text); }
+.ride-report .lap--index { color: var(--nf-muted); }
+.ride-report .lap--power { font-weight: 700; }
+.ride-report laps-list:not(.nf-has-smo2) :is(.col-smo2, .lap--smo2),
+.ride-report laps-list:not(.nf-has-thb) :is(.col-thb, .lap--thb),
+.ride-report laps-list:not(.nf-has-core) :is(.col-core, .lap--core-temperature),
+.ride-report laps-list:not(.nf-has-skin) :is(.col-skin, .lap--skin-temperature) { display: none; }
+.nf-laps-empty { margin: 8px 0 0; padding: 16px; border: 1px dashed var(--nf-line-strong); border-radius: 10px; color: var(--nf-muted); font: 500 15px 'Barlow', system-ui, sans-serif; }
+.ride-report laps-list:has(.lap--item) .nf-laps-empty { display: none; }
+.ride-report laps-list:not(:has(.lap--item)) .laps--header { display: none; }
+
+/* time in zones: Z1 … Z7 under each value */
+.ride-report power-in-zone { counter-reset: zone; }
+.ride-report .power--zone--item:not(.power--unit) { counter-increment: zone; }
+.ride-report .power--zone--item:not(.power--unit)::after { content: 'Z' counter(zone); display: block; margin-top: 2px; color: var(--nf-muted); font: 500 13px 'Barlow', system-ui, sans-serif; }
+/* one grid for the header and every lap, whatever Auuki's own rules say */
+#view--workouts-report laps-list .laps--header,
+#view--workouts-report laps-list .lap--item--inner {
+    display: grid !important; grid-auto-flow: column; grid-template-columns: 48px; grid-auto-columns: minmax(0, 1fr);
+    width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 16px !important; box-sizing: border-box;
+}
+#view--workouts-report laps-list .lap--item { border: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; box-sizing: border-box; }
+#view--workouts-report laps-list .lap--header--item,
+#view--workouts-report laps-list .lap--value { width: auto !important; min-width: 0; flex: none !important; margin: 0 !important; padding: 0 !important; }
+#view--workouts-report laps-list .lap--header--item,
+#view--workouts-report laps-list .lap--value { justify-self: stretch !important; text-align: left !important; }
+/* Rides: every heading on the same left edge as the cards; zones full width, Z1…Z7 under the values */
+#view--workouts-report .list--sub-section, #view--workouts-report .list--row--outer, #view--workouts-report .list--row--inner {
+    max-width: none !important; width: 100%; margin: 0 !important; padding: 0 !important; border: 0;
+}
+#view--workouts-report .list--sub-heading { padding: 12px 0 4px !important; text-align: left; }
+#view--workouts-report activity-item.nf-ride { max-width: none; margin: 8px 0; }
+#view--workouts-report power-in-zone { width: 100% !important; max-width: none !important; }
+#view--workouts-report .power--zone--item { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 64px; }

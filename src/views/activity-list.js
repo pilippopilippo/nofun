@@ -1,6 +1,7 @@
 import { xf, formatDate, escapeHtml, } from '../functions.js';
 import { models } from '../models/models.js';
 import { formatTime, } from '../utils.js';
+import { rideWhen, rideLength } from '../ride-format.js';
 
 class ActivityList extends HTMLElement {
     constructor() {
@@ -56,101 +57,34 @@ class ActivityList extends HTMLElement {
     uploadStatus(data) {
         return data.status;
     }
+    // nofun: one row per ride: name, when and how long; Download FIT; Delete asks first.
+    // The upload buttons of Intervals.icu and Strava stay for builds with an account
+    // (hidden in nofun), the empty image action is gone.
     template(i, data) {
-        const status = this.uploadStatus(data);
+        const status = this.uploadStatus(data) ?? {};
         const id = escapeHtml(this.id(data));
         const name = escapeHtml(this.name(data));
         const intervalsStatus = escapeHtml(status.intervals ?? 'none');
         const stravaStatus = escapeHtml(status.strava ?? 'none');
-        const trainingPeaksStatus = escapeHtml(status.trainingPeaks ?? 'none');
-
         return `
-            <activity-item id="i${i}--activity--item" class="some" data-id="${id}">
-                    <div class="activity--cont list--row--outer">
-                        <div class="list--row--inner activity--info">
-                            <div class="activity--info--short">
-                                <view-action
-                                    class="info"
-                                    action=":toggleExpand"
-                                    topic=":activity:${id}">
-                                    <div id="i${i}--activity--date" class="activity--name">
-                                        ${name}
-                                    </div>
-                                    <div class="activity--date">
-                                        ${this.date(data)}
-                                    </div>
-                                    <div id="i${i}--activity--duration" class="activity--duration">
-                                        ${this.duration(data)}
-                                    </div>
-                                </view-action>
-                                <view-action
-                                    class=""
-                                    action=":options"
-                                    topic=":activity:${id}">
-                                    <svg class="control--btn--icon" width="24" height="24">
-                                        <use href="#icon--options" />
-                                    </svg>
-                                </view-action>
-                            </div>
-                            <div class="activity--info--full">
-                                <div class="activity--image">
-                                </div>
-                                <div class="activity--actions">
-                                    <div></div>
-                                    <view-action
-                                        class="activity--action action--intervals"
-                                        action=":intervals:upload"
-                                        topic=":activity:${id}">
-                                        <svg class="activity--icon intervals--icon" width="24" height="24">
-                                            <use href="#icon--intervals" />
-                                        </svg>
-                                        <div class="connection-icon-switch--indicator ${intervalsStatus} intervals"></div>
-                                    </view-action>
-
-                                    <view-action
-                                        class="activity--action"
-                                        action=":strava:upload"
-                                        topic=":activity:${id}">
-                                        <svg class="activity--icon strava--icon" width="24" height="24">
-                                            <use href="#icon--strava" />
-                                        </svg>
-                                        <div class="connection-icon-switch--indicator ${stravaStatus} strava"></div>
-                                    </view-action>
-                                    <!--
-                                    <view-action
-                                        class="activity--action"
-                                        action=":trainingPeaks:upload"
-                                        topic=":activity:${id}">
-                                        <div class="tp-logo--icon">TP</div>
-                                        <div class="connection-icon-switch--indicator ${trainingPeaksStatus} tp"></div>
-                                    -->
-                                    </view-action>
-                                    <view-action
-                                        class="activity--action action--download"
-                                        action=":download"
-                                        topic=":activity:${id}">
-                                        <svg class="activity--icon">
-                                            <use href="#icon--save-btn" />
-                                        </svg>
-                                    </view-action>
-                                    <view-action
-                                        class="activity--action action--image"
-                                        action=":image"
-                                        topic=":activity:${id}">
-                                        <svg class="activity--icon">
-                                            <use href="#icon--image" />
-                                        </svg>
-                                    </view-action>
-                                </div> <!-- end activity--actions -->
-                            </div> <!-- end activity--info--full -->
-                        </div> <!-- end activity--info -->
-                    </div> <!-- end activity--cont -->
-                    <view-action
-                        class="activity--options"
-                        action=":remove"
-                        topic=":activity:${id}">
-                        <span class="activity--remove">Delete</span>
+            <activity-item id="i${i}--activity--item" class="nf-ride" data-id="${id}">
+                <div class="nf-ride-main">
+                    <p id="i${i}--activity--date" class="activity--name">${name}</p>
+                    <p class="nf-ride-meta"><span class="activity--date">${escapeHtml(rideWhen(data.timestamp))}</span> · <span id="i${i}--activity--duration" class="activity--duration">${escapeHtml(rideLength(data.duration))}</span></p>
+                </div>
+                <div class="nf-ride-actions">
+                    <view-action class="activity--action action--intervals" action=":intervals:upload" topic=":activity:${id}" role="button" tabindex="0" aria-label="Upload to Intervals.icu">
+                        <svg class="activity--icon intervals--icon" width="24" height="24"><use href="#icon--intervals" /></svg>
+                        <div class="connection-icon-switch--indicator ${intervalsStatus} intervals"></div>
                     </view-action>
+                    <view-action class="activity--action action--strava" action=":strava:upload" topic=":activity:${id}" role="button" tabindex="0" aria-label="Upload to Strava">
+                        <svg class="activity--icon strava--icon" width="24" height="24"><use href="#icon--strava" /></svg>
+                        <div class="connection-icon-switch--indicator ${stravaStatus} strava"></div>
+                    </view-action>
+                    <view-action class="nf-btn nf-light action--download" action=":download" topic=":activity:${id}" role="button" tabindex="0">Download FIT</view-action>
+                    <view-action class="nf-btn nf-ride-delete" action=":options" topic=":activity:${id}" role="button" tabindex="0">Delete</view-action>
+                    <view-action class="nf-btn nf-ride-confirm activity--options" action=":remove" topic=":activity:${id}" role="button" tabindex="0">Delete this ride</view-action>
+                </div>
             </activity-item>
         `;
     }
