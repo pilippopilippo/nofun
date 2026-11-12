@@ -157,7 +157,8 @@ def main():
             assert 'Week 3 of 11' in text(page, 'nofun-plan .nf-head'), text(page, 'nofun-plan .nf-head')
             assert text(page, '.nf-today .nf-today-title') == '90 min EM + 2×[4×2 min] SEPI'
             sides = page.evaluate("[...document.querySelectorAll('.nf-day .nf-day-side')].map(e => e.textContent.trim())")
-            assert 'Done' in sides and 'Ride' in sides, sides
+            assert any(x.startswith('Done') for x in sides) and 'Ride' in sides, sides
+            assert any(x.endswith('Again') for x in sides), f'no Again on a done ride: {sides}'
             assert 'W3 Sat' in bottom_bar(page), bottom_bar(page)  # today's ride is preselected
             page.click('.nf-today .nf-ride')
             page.wait_for_timeout(500)
@@ -476,6 +477,22 @@ def main():
             click(page, 'nofun-profile [data-action="ramp"]')
             page.wait_for_timeout(400)
             assert 'Ramp test' in bottom_bar(page), bottom_bar(page)
+        _()
+
+        @check('plan: every indoor ride can be ridden by hand, also before the plan starts')
+        def _():
+            page.evaluate("localStorage.setItem('nofun:plan-state', JSON.stringify({planId: 'comp-granfondo', start: '2026-11-16', done: {}}))")
+            page.reload(wait_until='load')
+            page.wait_for_timeout(1500)
+            assert 'starts on Monday 16 November' in text(page, '.nf-today-title'), text(page, '.nf-today-title')
+            assert page.locator('.nf-today [data-action="ride"]').count() == 1, 'no way to start before the plan'
+            rides = page.locator('.nf-day:not(.nf-rest):not(.nf-outdoor) [data-action="ride"], .nf-day.nf-outdoor [data-action="ride"]').count()
+            trainer = page.evaluate("[...document.querySelectorAll('.nf-day')].filter(d => d.querySelector('svg.nf-profile')).length")
+            assert rides == trainer and trainer > 0, f'{rides} buttons for {trainer} indoor rides'
+            click(page, '.nf-day [data-action="ride"]')
+            assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
+            assert 'W1' in bottom_bar(page), bottom_bar(page)
+            page.evaluate("localStorage.setItem('nofun:plan-state', JSON.stringify({planId: 'new-granfondo', start: '2026-10-26', done: {}}))")
         _()
 
         @check('the plan survives a reload')

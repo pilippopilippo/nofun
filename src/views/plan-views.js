@@ -305,7 +305,12 @@ class NofunPlan extends HTMLElement {
                 'not-started': `The plan starts on ${longDate(today.startsOn ?? started)}.`,
                 'finished': 'Plan finished. Pick the next one, or Maintenance between plans.',
             };
-            const extra = today.missed
+            const firstRide = today.status === 'not-started'
+                ? P.weekView(state, 1).days.flatMap((d) => d.rides).find((r) => r.trainer)
+                : null;
+            const extra = firstRide
+                ? `<p class="nf-muted">You can start before: ${esc(firstRide.title)}</p>${rideButton(firstRide, 1, 'Ride it now', true)}`
+                : today.missed
                 ? `<p class="nf-muted">Missed earlier this week: ${esc(today.missed.title)}</p>${rideButton(today.missed, current, 'Ride it now')}`
                 : (today.next ? `<p class="nf-muted">Next: ${esc(DAYS[today.next.day])} · ${esc(today.next.title)}</p>` : '');
             hero = `<section class="nf-today nf-today-quiet" aria-label="Today"><div class="nf-today-main"><h2 class="nf-today-title">${esc(messages[today.status])}</h2>${extra}</div>
@@ -330,12 +335,15 @@ class NofunPlan extends HTMLElement {
                 }
                 let side = '';
                 let note = ftp ? targets(r.title, ftp) : '';
-                if(r.status === 'done') side = '<span class="nf-done"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9.5L7 13.5L15 4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Done</span>';
-                else if(r.status === 'missed-open') { note = 'Missed. You can still ride it this week.'; side = rideButton(r, view.week.number); }
-                else if(r.status === 'missed') { note = 'Missed.'; }
+                // every indoor ride can be ridden by hand, on any day: today, early, again, late
+                const week = view.week.number;
+                const thisWeek = week === current || (current < 1 && week === 1);
+                if(r.status === 'done') side = `<span class="nf-done"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9.5L7 13.5L15 4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Done</span>${rideButton(r, week, 'Again')}`;
+                else if(r.status === 'missed-open') { note = 'Missed. You can still ride it this week.'; side = rideButton(r, week); }
+                else if(r.status === 'missed') { note = 'Missed.'; side = rideButton(r, week, 'Ride anyway'); }
                 else if(r.status === 'today') side = '<span class="nf-muted">Above</span>';
-                else if(r.outdoorSuggested) { note = `Better outdoors. Indoors: ${duration(r.minutes)}.`; side = view.week.number === current ? rideButton(r, view.week.number, 'Ride indoors') : ''; }
-                else if(view.week.number === current) side = rideButton(r, view.week.number, 'Ride early');
+                else if(r.outdoorSuggested) { note = `Better outdoors. Indoors: ${duration(r.minutes)}.`; side = rideButton(r, week, 'Ride indoors'); }
+                else side = rideButton(r, week, thisWeek ? 'Ride early' : 'Ride now');
                 const cls = r.status === 'today' ? ' nf-is-today' : (r.status.startsWith('missed') ? ' nf-missed' : (r.outdoorSuggested ? ' nf-outdoor' : ''));
                 return `<article class="nf-day${cls}">${name}<div class="nf-day-main"><p class="nf-day-title">${esc(r.title)}${slot}</p><p class="nf-muted${r.status.startsWith('missed') ? ' nf-warn' : ''}">${esc(note)}</p></div>${profileSvg(r.zwo, `Profile of ${r.title}`, r.status === 'done' ? 0.5 : 1)}<span class="nf-day-side">${side}</span></article>`;
             }).join('');
