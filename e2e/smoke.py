@@ -223,6 +223,42 @@ def main():
             page.wait_for_timeout(250)
         _()
 
+        @check('ride: 3-digit numbers and a cadence target fit their cards, on phones too')
+        def _():
+          send = lambda event, value: page.evaluate(f"window.dispatchEvent(new CustomEvent('{event}', {{detail: {{data: {value}}}}}))")
+          try:
+            for event, value in [('power3s', 385), ('cadence', 105), ('heartRate', 188), ('ui:cadence-target-set', 95)]:
+                send(event, value)
+            page.evaluate("""(() => { const h = document.querySelector('nofun-ride-hero');
+                h.v.lap.textContent = '385'; h.v['lap-np'].textContent = '391'; h.v['lap-cadence'].textContent = '105'; })()""")
+            for width, height in [(1280, 800), (390, 844), (360, 740), (375, 667), (360, 560)]:
+                page.set_viewport_size({'width': width, 'height': height})
+                page.wait_for_timeout(250)
+                problem = page.evaluate("""(() => {
+                    for (const card of document.querySelectorAll('nofun-ride-hero .nf-hero-card')) {
+                        const name = card.querySelector('.nf-hero-label')?.textContent.trim();
+                        if (card.scrollHeight > card.clientHeight + 1) return `${name}: card cut (${card.scrollHeight} > ${card.clientHeight})`;
+                        for (const e of card.querySelectorAll('.nf-hero-mid, .nf-lap-value')) {
+                            const r = document.createRange(); r.selectNodeContents(e);
+                            const bottoms = [...r.getClientRects()].filter(x => x.width > 0).map(x => x.bottom);
+                            if (Math.max(...bottoms) - Math.min(...bottoms) > 8) return `${name}: "${e.textContent.trim()}" breaks from its unit`;
+                            if (e.scrollWidth > e.clientWidth + 1) return `${name}: "${e.textContent.trim()}" wider than its column`;
+                        }
+                    }
+                    for (const e of document.querySelectorAll('nofun-ride-hero .nf-progress'))
+                        if (e.getBoundingClientRect().height < 3) return 'the interval progress bar is squeezed away';
+                    const foot = document.querySelector('.nf-hero-foot').getBoundingClientRect().bottom;
+                    if (foot > document.querySelector('nofun-ride-hero').getBoundingClientRect().bottom + 1) return 'the line under the cards is cut';
+                    return '';
+                })()""")
+                assert not problem, f'{width}x{height}: {problem}'
+          finally:
+            for event in ['power3s', 'cadence', 'heartRate', 'ui:cadence-target-set']:
+                send(event, 0)
+            page.set_viewport_size({'width': 1280, 'height': 900})
+            page.wait_for_timeout(250)
+        _()
+
         @check('ride: trainer modes switch with one tap')
         def _():
             for mode in ['resistance', 'slope', 'erg']:

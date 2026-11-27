@@ -151,7 +151,8 @@ function tracePath(values, y, step = 1) {
 
 const TRACE = `<svg class="nf-trace" aria-hidden="true" preserveAspectRatio="none">` +
       `<path class="nf-trace-cadence" d=""/><path class="nf-trace-power-halo" d=""/><path class="nf-trace-power" d=""/></svg>` +
-      `<p class="nf-trace-legend" hidden><span class="nf-trace-key nf-trace-key-power">Power</span><span class="nf-trace-key nf-trace-key-cadence">Cadence</span></p>`;
+      `<p class="nf-trace-legend" hidden><span class="nf-trace-key nf-trace-key-power"><span class="nf-long">Power</span><span class="nf-short">W</span></span>` +
+      `<span class="nf-trace-key nf-trace-key-cadence"><span class="nf-long">Cadence</span><span class="nf-short">rpm</span></span></p>`;
 
 class WorkoutGraph extends HTMLElement {
     constructor() {

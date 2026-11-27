@@ -22,6 +22,7 @@ const mmss = (seconds) => {
     return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
 };
 const watts = (share, ftp) => (share > 0 && share < 9 ? Math.round(share * ftp) : Math.round(share));
+const esc = (text) => String(text ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const num = (value) => (Number.isFinite(value) && value > 0 ? String(Math.round(value)) : '–');
 
 // the next interval (warm-ups and cool-downs are made of many short steps: the next step
@@ -90,9 +91,9 @@ const TEMPLATE = `
             <p class="nf-hero-mid" data-v="left">–:––</p>
             <div class="nf-progress"><div data-v="progress"></div></div>
             <div class="nf-lap-stats" aria-label="This interval">
-                <p><span class="nf-hero-label" title="Average power"><span class="nf-long">Average</span><span class="nf-short">Avg</span></span><span class="nf-lap-value"><strong data-v="lap">–</strong> W</span></p>
-                <p><span class="nf-hero-label" title="Normalized power">NP</span><span class="nf-lap-value"><strong data-v="lap-np">–</strong> W</span></p>
-                <p><span class="nf-hero-label" title="Average cadence"><span class="nf-long">Cadence</span><span class="nf-short">Cad</span></span><span class="nf-lap-value"><strong data-v="lap-cadence">–</strong> rpm</span></p>
+                <p><span class="nf-hero-label" title="Average power"><span class="nf-long">Average</span><span class="nf-short">Avg</span></span><span class="nf-lap-value"><strong data-v="lap">–</strong><span class="nf-lap-unit"> W</span></span></p>
+                <p><span class="nf-hero-label" title="Normalized power">NP</span><span class="nf-lap-value"><strong data-v="lap-np">–</strong><span class="nf-lap-unit"> W</span></span></p>
+                <p><span class="nf-hero-label" title="Average cadence"><span class="nf-long">Cadence</span><span class="nf-short">Cad</span></span><span class="nf-lap-value"><strong data-v="lap-cadence">–</strong><span class="nf-lap-unit"> rpm</span></span></p>
             </div>
         </div>
         <div class="nf-hero-card nf-hero-pair">
@@ -102,17 +103,17 @@ const TEMPLATE = `
                 <p class="nf-hero-label" data-v="cadence-target"></p>
             </div>
             <div>
-                <p class="nf-hero-label">Heart rate</p>
+                <p class="nf-hero-label" title="Heart rate"><span class="nf-long">Heart rate</span><span class="nf-short">HR</span></p>
                 <p class="nf-hero-mid"><span data-v="hr">–</span><span class="nf-hero-unit"> bpm</span></p>
             </div>
         </div>
     </section>
     <div class="nf-hero-foot">
-        <p class="nf-more">Elapsed <strong data-v="elapsed">0:00</strong><span>Speed <strong data-v="speed">–</strong> km/h</span><span>Distance <strong data-v="distance">–</strong> km</span><span>Energy <strong data-v="kcal">–</strong> kcal</span></p>
+        <p class="nf-more">Elapsed <strong data-v="elapsed">0:00</strong><span><span class="nf-more-label">Speed </span><strong data-v="speed">–</strong> km/h</span><span><span class="nf-more-label">Distance </span><strong data-v="distance">–</strong> km</span><span><span class="nf-more-label">Energy </span><strong data-v="kcal">–</strong> kcal</span></p>
         <p class="nf-upnext" data-v="next-line" hidden>Up next <strong data-v="next"></strong></p>
         <div class="nf-steps-nav">
-            <button type="button" class="nf-btn" data-action="back" aria-label="Back to the start of the previous interval"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3v12M15 3L7 9l8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>Previous</button>
-            <button type="button" class="nf-btn" data-action="skip" aria-label="Skip to the next interval">Skip<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M14 3v12M3 3l8 6-8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg></button>
+            <button type="button" class="nf-btn" data-action="back" aria-label="Back to the start of the previous interval"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3v12M15 3L7 9l8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg><span class="nf-btn-text">Previous</span></button>
+            <button type="button" class="nf-btn" data-action="skip" aria-label="Skip to the next interval"><span class="nf-btn-text">Skip</span><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M14 3v12M3 3l8 6-8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg></button>
         </div>
     </div>`;
 
@@ -216,7 +217,12 @@ class NofunRideHero extends HTMLElement {
     drawNext() {
         const next = nextInterval(this.s.workout, this.s.intervalIndex, this.s.ftp);
         this.v['next-line'].hidden = !next;
-        if(next) this.v.next.textContent = next.text;
+        if(next) {
+            // on phones a ramp reads "10:00 300→400 W" (the long form takes a line of its own)
+            const short = next.text.replace(/from (\d+) to (\d+) W$/, '$1→$2 W');
+            this.v.next.innerHTML = short === next.text ? esc(next.text) :
+                `<span class="nf-long">${esc(next.text)}</span><span class="nf-short">${esc(short)}</span>`;
+        }
         this.drawLap();
     }
 }
