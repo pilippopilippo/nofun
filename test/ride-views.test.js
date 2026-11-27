@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { nextInterval, mmss, scale } from '../src/views/ride-views.js';
+import { nextInterval, mmss, scale, normalizedPower } from '../src/views/ride-views.js';
 
 describe('ride hero helpers', () => {
     const workout = { intervals: [
@@ -29,5 +29,18 @@ describe('ride hero helpers', () => {
         expect(at(325)).toBeLessThan(1);
         expect(at(1000)).toBe(1);
         expect(at(0)).toBe(0);
+    });
+    test('normalized power of an interval', () => {
+        expect(normalizedPower([])).toBe(0);
+        // steady power: NP is the power
+        expect(normalizedPower(Array(120).fill(250))).toBeCloseTo(250, 6);
+        // the first seconds: the rolling average covers what there is
+        expect(normalizedPower([200, 200, 200])).toBeCloseTo(200, 6);
+        // surges weigh more than the average
+        const surges = Array.from({ length: 600 }, (_, i) => (Math.floor(i / 60) % 2 ? 400 : 150));
+        const average = surges.reduce((a, b) => a + b, 0) / surges.length;
+        expect(average).toBe(275);
+        expect(normalizedPower(surges)).toBeGreaterThan(290);
+        expect(normalizedPower(surges)).toBeLessThan(400);
     });
 });

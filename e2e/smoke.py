@@ -31,6 +31,10 @@ BLUETOOTH_STUB = """try { Object.defineProperty(navigator, 'bluetooth', { config
 ZWO = """<workout_file><author>e2e</author><name>E2E upload</name><sportType>bike</sportType><workout>
 <SteadyState Duration="300" Power="0.6"/></workout></workout_file>"""
 
+# two intervals of 4 s: the whole workout runs in the test
+SHORT_ZWO = """<workout_file><author>e2e</author><name>E2E short</name><sportType>bike</sportType><workout>
+<SteadyState Duration="4" Power="0.5"/><SteadyState Duration="4" Power="0.7"/></workout></workout_file>"""
+
 results = []
 
 # Known bugs, reported but not failing the run until they are fixed (see README, CI section).
@@ -215,6 +219,42 @@ def main():
                     bar = page.evaluate("document.querySelector('.fixed-bottom').getBoundingClientRect().height")
                     assert bar <= (56 if width >= 900 or height <= 480 else 96) + 1, f'{width}x{height}: bottom bar {bar}px'
           finally:
+            page.set_viewport_size({'width': 1280, 'height': 900})
+            page.wait_for_timeout(250)
+        _()
+
+        @check('ride: 3-digit numbers and a cadence target fit their cards, on phones too')
+        def _():
+          send = lambda event, value: page.evaluate(f"window.dispatchEvent(new CustomEvent('{event}', {{detail: {{data: {value}}}}}))")
+          try:
+            for event, value in [('power3s', 385), ('cadence', 105), ('heartRate', 188), ('ui:cadence-target-set', 95)]:
+                send(event, value)
+            page.evaluate("""(() => { const h = document.querySelector('nofun-ride-hero');
+                h.v.lap.textContent = '385'; h.v['lap-np'].textContent = '391'; h.v['lap-cadence'].textContent = '105'; })()""")
+            for width, height in [(1280, 800), (390, 844), (360, 740), (375, 667), (360, 560)]:
+                page.set_viewport_size({'width': width, 'height': height})
+                page.wait_for_timeout(250)
+                problem = page.evaluate("""(() => {
+                    for (const card of document.querySelectorAll('nofun-ride-hero .nf-hero-card')) {
+                        const name = card.querySelector('.nf-hero-label')?.textContent.trim();
+                        if (card.scrollHeight > card.clientHeight + 1) return `${name}: card cut (${card.scrollHeight} > ${card.clientHeight})`;
+                        for (const e of card.querySelectorAll('.nf-hero-mid, .nf-lap-value')) {
+                            const r = document.createRange(); r.selectNodeContents(e);
+                            const bottoms = [...r.getClientRects()].filter(x => x.width > 0).map(x => x.bottom);
+                            if (Math.max(...bottoms) - Math.min(...bottoms) > 8) return `${name}: "${e.textContent.trim()}" breaks from its unit`;
+                            if (e.scrollWidth > e.clientWidth + 1) return `${name}: "${e.textContent.trim()}" wider than its column`;
+                        }
+                    }
+                    for (const e of document.querySelectorAll('nofun-ride-hero .nf-progress'))
+                        if (e.getBoundingClientRect().height < 3) return 'the interval progress bar is squeezed away';
+                    const foot = document.querySelector('.nf-hero-foot').getBoundingClientRect().bottom;
+                    if (foot > document.querySelector('nofun-ride-hero').getBoundingClientRect().bottom + 1) return 'the line under the cards is cut';
+                    return '';
+                })()""")
+                assert not problem, f'{width}x{height}: {problem}'
+          finally:
+            for event in ['power3s', 'cadence', 'heartRate', 'ui:cadence-target-set']:
+                send(event, 0)
             page.set_viewport_size({'width': 1280, 'height': 900})
             page.wait_for_timeout(250)
         _()
@@ -435,6 +475,35 @@ def main():
             page.wait_for_timeout(200)
             page.evaluate("document.querySelector('.nf-stop-dialog[open], .nf-stop-dialog') && document.querySelector('.nf-stop-dialog [data-action=\"end\"]').click()")
             page.wait_for_timeout(500)
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"new\"]')?.click()")
+        _()
+
+        @check('the end of the workout ends the ride: the timer stops, the summary shows')
+        def _():
+            zwo = Path(tempfile.mkdtemp()) / 'short.zwo'
+            zwo.write_text(SHORT_ZWO)
+            go(page, 'Library')
+            tab(page, 'library')
+            page.set_input_files('#workouts-page input[type="file"], input[type="file"]', str(zwo))
+            page.wait_for_timeout(600)
+            click(page, 'workout-item:has(.workout--name:text-is("E2E short")) .nf-card-ride')
+            assert page.evaluate("document.querySelector('.page.active')?.getAttribute('page')") == 'home'
+            page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"start\"]').click()")
+            page.wait_for_timeout(4000)
+            graph = page.evaluate("[document.querySelector('workout-graph .nf-trace-power')?.getAttribute('d') ?? '', !document.querySelector('workout-graph .nf-trace-legend')?.hidden]")
+            assert graph[0].startswith('M') and graph[1], f'no power line on the workout graph: {graph}'
+            labels = page.evaluate("[...document.querySelectorAll('nofun-ride-hero .nf-lap-stats > p')].map(e => e.getAttribute('aria-label') ?? e.querySelector('.nf-hero-label').title)")
+            assert labels == ['Average power', 'Normalized power', 'Average cadence'], labels
+            page.wait_for_timeout(6000)
+            state = page.evaluate("(() => { const f = document.querySelector('nofun-ride-flow'); return [f.view, f.status]; })()")
+            assert state == ['done', 'stopped'], f'the ride goes on after the workout: {state}'
+            assert not page.locator('.nf-stop-dialog').is_visible(), 'the end of the workout asked to confirm Stop'
+            time = lambda: page.evaluate("document.querySelector('nofun-ride-flow .nf-stat-value')?.textContent")
+            first = time()
+            assert first == '0:08', f'ride time {first}, the workout is 8 s'
+            page.wait_for_timeout(2000)
+            elapsed = page.evaluate("document.querySelector('nofun-ride-hero [data-v=\"elapsed\"]').textContent")
+            assert time() == first and elapsed == '0:00', f'the timer still runs: {time()} {elapsed}'
             page.evaluate("document.querySelector('nofun-ride-flow [data-action=\"new\"]')?.click()")
         _()
 

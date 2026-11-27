@@ -8,7 +8,7 @@ An indoor cycling app in the browser for structured workouts on a smart trainer 
 
 ## Ride
 
-Before riding, Ride shows the workout, the devices (connect with one tap) and Start; "Ride screen" shows the riding layout without starting. While riding: power and target, the zone band, interval time left, cadence, heart rate and what comes next, always on one screen. After Stop: time, averages, energy, distance, the work intervals against their target, the FIT file and the Garmin Connect import.
+Before riding, Ride shows the workout, the devices (connect with one tap) and Start; "Ride screen" shows the riding layout without starting. While riding: power and target, the zone band, interval time left with the interval's average power, normalized power and average cadence, cadence, heart rate and what comes next, always on one screen; the workout graph draws your power and cadence as you ride. At the end of the workout the ride ends by itself (the timer stops, no Stop needed). After Stop or the end: time, averages, energy, distance, the work intervals against their target, the FIT file and the Garmin Connect import.
 
 ## Library and You
 

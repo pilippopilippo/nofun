@@ -330,12 +330,19 @@ class Watch {
                 self.nextInterval(intervals, i, s);
                 self.nextStep(intervals, i, s);
             } else {
-                xf.dispatch('workout:done');
+                self.finishWorkout();
             }
         } else {
             xf.dispatch('watch:lap');
             xf.dispatch('watch:lapTime', 0);
         }
+    }
+    // nofun: the end of the workout ends the ride, like Stop confirmed: the timer stops, the
+    // ride is saved and its summary shows. Auuki kept the timer running after the last
+    // interval, with the interval time starting again from zero.
+    finishWorkout() {
+        xf.dispatch('workout:done');
+        this.stop();
     }
     step() {
         const self        = this;
@@ -356,7 +363,7 @@ class Watch {
             self.nextInterval(intervals, i, s);
             self.nextStep(intervals, i, s);
         } else {
-            xf.dispatch('workout:done');
+            self.finishWorkout();
         }
     }
     nextInterval(intervals, intervalIndex, stepIndex) {

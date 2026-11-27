@@ -8,6 +8,10 @@
 @import "npm:@fontsource/barlow-condensed/600.css";
 @import "npm:@fontsource/barlow-condensed/700.css";
 
+/* the size of the middle numbers of the ride hero: a length, so a card computes it against the
+   hero and its columns inherit pixels (see .nf-hero-pair) */
+@property --nf-mid { syntax: '<length>'; inherits: true; initial-value: 20px; }
+
 :root {
     --ssb-font-family: 'Barlow', system-ui, sans-serif;
     --ssr-font-family: 'Barlow', system-ui, sans-serif;
@@ -25,6 +29,7 @@
     --nf-cr: #F2843B;
     --nf-pi: #EF4F6E;
     --nf-rec: #6C7686;
+    --nf-cadence: #B98CFF;  /* the cadence line: a colour no zone uses */
 }
 
 body {
@@ -319,14 +324,42 @@ html.no-hosted-api .nf-planned { display: none; }
     .nf-hero-unit { font-size: 0.3em; font-weight: 500; color: var(--nf-muted); }
     .nf-hero-target { text-align: right; }
     .nf-hero-target-value { font: 700 clamp(18px, min(16cqh, 6cqw), 72px)/1 var(--nf-display); color: var(--nf-pi); font-variant-numeric: tabular-nums; }
-    .nf-hero-mid { font: 700 clamp(20px, min(22cqh, 7cqw), 104px)/1 var(--nf-display); font-variant-numeric: tabular-nums; }
+    /* --nf-mid is set on the card (a registered length: computed there, against the hero) */
+    .nf-hero-card { --nf-mid: clamp(20px, min(22cqh, 7cqw), 104px); }
+    .nf-hero-mid { font: 700 var(--nf-mid)/1 var(--nf-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .nf-hero-mid .nf-hero-unit { font-size: 0.32em; }
     .nf-hero-pair { display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 12px; }
     @container hero (max-height: 300px) and (max-width: 700px) {
-        .nf-hero-mid { font-size: clamp(18px, 15cqh, 60px); }
+        .nf-hero-card { --nf-mid: clamp(18px, 15cqh, 60px); }
     }
-    .nf-progress { height: 8px; border-radius: 4px; background: var(--nf-line); overflow: hidden; }
+    /* cadence and heart rate: each column measures itself, number and unit stay on one line and
+       fit it (a 3-digit cadence pushed "rpm" to the next line, on phones out of the card) */
+    .nf-hero-pair > div { container-type: inline-size; min-width: 0; }
+    .nf-hero-pair .nf-hero-mid { font-size: min(var(--nf-mid), 46cqi); }
+    .nf-hero-pair .nf-hero-label { font-size: clamp(11px, min(5cqh, 22cqi), 18px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nf-hero-pair .nf-short { display: none; }
+    @container (max-width: 75px) {
+        .nf-hero-pair .nf-long { display: none; }
+        .nf-hero-pair .nf-short { display: inline; }
+    }
+    .nf-progress { flex: 0 0 auto; height: 8px; border-radius: 4px; background: var(--nf-line); overflow: hidden; }
     .nf-progress > div { width: 0; height: 100%; background: var(--nf-pi); transition: width 0.5s linear; }
+    /* this interval: average power, normalized power, average cadence; a step bigger than the
+       labels, well under the big numbers */
+    .nf-lap-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; margin-top: min(4px, 0.8cqh); }
+    /* each stat measures its column: the value fits it, the label gets short when it is narrow */
+    .nf-lap-stats > p { display: flex; flex-direction: column; min-width: 0; container-type: inline-size; }
+    .nf-lap-stats .nf-hero-label { font-size: clamp(11px, min(5cqh, 24cqi), 18px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nf-lap-value { color: var(--nf-text); font: 700 clamp(13px, min(9cqh, 40cqi), 34px)/1.05 var(--nf-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .nf-lap-unit { color: var(--nf-muted); font: 500 0.45em 'Barlow', system-ui, sans-serif; }
+    .nf-lap-stats .nf-short { display: none; }
+    @container (max-width: 72px) {
+        .nf-lap-stats .nf-long { display: none; }
+        .nf-lap-stats .nf-short { display: inline; }
+    }
+    @container hero (max-width: 700px) {
+        .nf-lap-stats { gap: 4px 6px; }
+    }
     .nf-band { margin-top: min(6px, 1cqh); }
     .nf-band[hidden], .nf-upnext[hidden], .nf-band-power[hidden] { display: none; }
     .nf-band-track { position: relative; height: 26px; }
@@ -338,6 +371,7 @@ html.no-hosted-api .nf-planned { display: none; }
     @container hero (max-height: 260px) { .nf-band-labels span:nth-child(2) { display: none; } }
     .nf-upnext { flex: 0 0 auto; margin-top: min(8px, 1.5cqh); color: var(--nf-muted); text-align: right; font-size: clamp(11px, 5cqh, 16px); }
     .nf-upnext strong { margin-left: 6px; color: var(--nf-text); font: 600 clamp(14px, 7cqh, 24px) var(--nf-display); }
+    .nf-upnext .nf-short { display: none; }
 
     /* the controls right under the numbers: one tap to change mode */
     #targets { padding: 0 16px; }
@@ -544,6 +578,11 @@ html.no-hosted-api .no-hosted-api--note {
     #home-page > #home-page-wrapper { grid-template-rows: auto minmax(0, 2.6fr) auto minmax(0, 1.4fr) auto 0; }
     #home-page-wrapper > #graph-power { display: block; }
 }
+/* phones upright but short (a 375×667 iPhone SE): the numbers need more of the height or the
+   cards cut them, as on taller phones; the workout graph keeps a strip */
+@media (max-width: 600px) and (max-height: 680px) and (not ((min-width: 500px) and (max-height: 432px) and (orientation: landscape))) {
+    #home-page > #home-page-wrapper { grid-template-rows: auto minmax(0, 3fr) auto minmax(0, 1.1fr) auto 0; }
+}
 workout-text-event { font-family: 'Barlow', system-ui, sans-serif; font-size: 18px; }
 
 /* ---- the bottom bar: larger type, everything centred ---- */
@@ -672,8 +711,9 @@ workout-editor .editor--row { min-height: 48px; align-items: center; }
     #home-page > #home-page-wrapper { grid-template-rows: auto minmax(0, 4fr) auto minmax(0, 1.3fr) auto 0; }
 }
 @container hero (max-width: 700px) {
-    .nf-hero-card { padding: min(12px, 2cqh) 14px; }
-    .nf-hero-mid { font-size: clamp(18px, 11cqh, 60px); }
+    .nf-hero-card { padding: min(12px, 2cqh) 12px; }
+    .nf-hero-card { --nf-mid: clamp(18px, 11cqh, 60px); }
+    .nf-hero-pair { gap: 8px; }
     .nf-hero-foot { gap: 4px 12px; }
     .nf-more { gap: 2px 12px; font-size: 13px; }
     .nf-steps-nav .nf-btn { min-height: 36px; padding: 0 10px; }
@@ -861,3 +901,66 @@ html.no-hosted-api .nf-ride-actions .activity--action { display: none; }
 .nf-day-side { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .nf-today-quiet .nf-today-main { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .nf-today-quiet .nf-ride { width: auto; min-width: 220px; padding: 0 28px; }
+
+/* ---- Ride: the workout graph draws power and cadence as the ride goes ---- */
+workout-graph .nf-trace { position: absolute; top: 0; left: 0; height: 100%; width: 100%; overflow: visible; z-index: 1; pointer-events: none; }
+workout-graph .nf-trace path { fill: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+workout-graph .nf-trace-power { stroke: var(--nf-text); stroke-width: 2px; }
+workout-graph .nf-trace-power-halo { stroke: var(--nf-ground); stroke-width: 4px; stroke-opacity: 0.55; }
+workout-graph .nf-trace-cadence { stroke: var(--nf-cadence); stroke-width: 1.5px; stroke-opacity: 0.95; }
+/* the legend sits in the strip of the workout name, right, never over the bars; the name keeps
+   the middle (padding on both sides, so it stays centred) */
+workout-graph .nf-trace-legend { position: absolute; bottom: 100%; right: 8px; z-index: 1; height: 1.4rem; display: flex; align-items: center; gap: 12px; margin: 0; color: var(--nf-muted); font: 500 12px/1 'Barlow', system-ui, sans-serif; white-space: nowrap; pointer-events: none; }
+workout-graph .nf-trace-legend[hidden] { display: none; }
+workout-graph .nf-trace-legend .nf-short { display: none; }
+#graph-workout > .graph--heading { padding: 0 160px; box-sizing: border-box; }
+@media (max-width: 600px) {
+    workout-graph .nf-trace-legend { gap: 8px; }
+    workout-graph .nf-trace-legend .nf-long { display: none; }
+    workout-graph .nf-trace-legend .nf-short { display: inline; }
+    #graph-workout > .graph--heading { padding: 0 84px; }
+}
+workout-graph .nf-trace-key::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 6px; border-radius: 2px; vertical-align: middle; background: var(--nf-text); }
+workout-graph .nf-trace-key-cadence::before { background: var(--nf-cadence); }
+
+/* ---- Ride on short phones (after the hero rules above, which they adjust) ---- */
+/* short phones: the interval card has little height, its three values a step smaller */
+@container hero (max-width: 700px) and (max-height: 340px) {
+    .nf-hero-card { gap: 2px; }
+    .nf-hero-label { line-height: 1.1; }
+    .nf-progress { height: 5px; }
+    .nf-lap-stats { margin-top: 0; }
+    .nf-lap-value { font-size: clamp(13px, min(7cqh, 40cqi), 34px); }
+}
+/* phones: Previous and Skip show their icons only (their names stay for screen readers), so
+   "Up next" fits on their line; speed, distance and energy are told by their units
+   (km/h, km, kcal), so the line under the cards stays one line */
+@container hero (max-width: 480px) or ((max-width: 700px) and (max-height: 340px)) {
+    .nf-steps-nav .nf-btn { min-width: 44px; justify-content: center; padding: 0 10px; }
+    .nf-steps-nav .nf-btn-text { display: none; }
+    .nf-more-label { display: none; }
+    .nf-upnext strong { font-size: clamp(13px, 6cqh, 20px); }
+    .nf-upnext .nf-long { display: none; }
+    .nf-upnext .nf-short { display: inline; }
+}
+/* very short phones (320×568, an old Android at 360×560 under the browser bars): tighter cards
+   and lines, a lower zone band without its watt labels, a smaller power number */
+@container hero (max-width: 700px) and (max-height: 250px) {
+    .nf-hero-card { padding-top: 4px; padding-bottom: 4px; gap: 2px; --nf-mid: clamp(16px, 8cqh, 60px); }
+    .nf-hero-label { line-height: 1.05; }
+    .nf-lap-value { font-size: clamp(12px, min(6cqh, 40cqi), 34px); }
+    .nf-hero-big { font-size: clamp(24px, min(13cqh, 11cqw), 170px); }
+    .nf-progress { height: 4px; }
+    .nf-band { margin-top: 0; }
+    .nf-band-labels { display: none; }
+    .nf-band-track { height: 18px; }
+    .nf-band-track::before, .nf-band-zone { top: 6px; height: 6px; }
+    .nf-band-target { top: 0; height: 18px; }
+    .nf-band-power { top: 2px; width: 14px; height: 14px; margin-left: -7px; }
+}
+/* very short phones: the numbers a little more of the height again; the strip for workout
+   messages under the graph 24 px when empty (it grows with a message) */
+@media (max-width: 600px) and (max-height: 600px) and (not ((min-width: 500px) and (max-height: 432px) and (orientation: landscape))) {
+    #home-page > #home-page-wrapper { grid-template-rows: auto minmax(0, 3.3fr) auto minmax(0, 1fr) auto 0; }
+    #home-page-wrapper > #graph-power { min-height: 24px; }
+}

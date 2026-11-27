@@ -101,6 +101,59 @@ function renderInfo(args = {}) {
     }
 }
 
+// nofun: what the rider does, drawn over the workout as it goes: power (3 s) and cadence,
+// one point a second at its place in the workout (Skip leaves a gap, Previous draws again
+// from there). Power uses the scale of the bars, so the line sits on the target; cadence its
+// own scale, 0 to CADENCE_MAX rpm.
+const CADENCE_MAX = 150;
+
+// the second of the workout each interval starts at
+function intervalStarts(intervals = []) {
+    const starts = [];
+    let t = 0;
+    for(const interval of intervals) {
+        starts.push(t);
+        t += interval?.duration ?? 0;
+    }
+    return starts;
+}
+
+// the second of the workout the rider is at: from the interval and the time left in it
+function workoutPosition(intervals, starts, index, lapTime) {
+    const duration = intervals?.[index]?.duration;
+    if(!exists(duration) || !Number.isFinite(lapTime)) return -1;
+    return Math.round(starts[index] + Math.min(duration, Math.max(0, duration - lapTime)));
+}
+
+// an SVG path through the values (one a second, x = the second): a gap where there are none.
+// With step > 1 each point is the average of step seconds (about one point a pixel: a long
+// workout on a narrow screen stays a line, not a band).
+function tracePath(values, y, step = 1) {
+    let d = '';
+    let pen = false;
+    for(let start = 0; start < values.length; start += step) {
+        let sum = 0;
+        let xs = 0;
+        let n = 0;
+        for(let x = start; x < Math.min(start + step, values.length); x++) {
+            if(!Number.isFinite(values[x])) continue;
+            sum += values[x];
+            xs += x;
+            n += 1;
+        }
+        if(n === 0) { pen = false; continue; }
+        const x = xs / n;
+        d += `${pen ? 'L' : 'M'}${Number.isInteger(x) ? x : x.toFixed(1)} ${y(sum / n).toFixed(1)}`;
+        pen = true;
+    }
+    return d;
+}
+
+const TRACE = `<svg class="nf-trace" aria-hidden="true" preserveAspectRatio="none">` +
+      `<path class="nf-trace-cadence" d=""/><path class="nf-trace-power-halo" d=""/><path class="nf-trace-power" d=""/></svg>` +
+      `<p class="nf-trace-legend" hidden><span class="nf-trace-key nf-trace-key-power"><span class="nf-long">Power</span><span class="nf-short">W</span></span>` +
+      `<span class="nf-trace-key nf-trace-key-cadence"><span class="nf-long">Cadence</span><span class="nf-short">rpm</span></span></p>`;
+
 class WorkoutGraph extends HTMLElement {
     constructor() {
         super();
@@ -110,6 +163,9 @@ class WorkoutGraph extends HTMLElement {
         this.index = 0;
         this.minHeight = 30;
         this.type = 'workout';
+        this.watchStatus = 'stopped';
+        this.live = { power: 0, cadence: 0 };
+        this.trace = { power: [], cadence: [], last: -1, starts: [] };
     }
     connectedCallback() {
         const self = this;
@@ -134,6 +190,10 @@ class WorkoutGraph extends HTMLElement {
         xf.sub('db:page', this.onPage.bind(this), this.signal);
         xf.sub('db:lapTime', this.onLapTime.bind(this), this.signal);
         xf.sub('db:workoutStatus', this.onWorkoutStatus.bind(this), this.signal);
+        xf.sub('db:power3s', (power) => { this.live.power = power; }, this.signal);
+        xf.sub('db:cadence', (cadence) => { this.live.cadence = cadence; }, this.signal);
+        xf.sub('db:watchStatus', this.onWatchStatus.bind(this), this.signal);
+        xf.sub('db:elapsed', this.onElapsed.bind(this), this.signal);
 
         this.addEventListener('mouseover', this.onHover.bind(this), this.signal);
         this.addEventListener('mouseout', this.onMouseOut.bind(this), this.signal);
@@ -198,6 +258,7 @@ class WorkoutGraph extends HTMLElement {
         this.dom.info.style.display = 'none';
     }
     onWorkout(value) {
+        if(value !== this.workout) this.clearTrace(value);
         this.workout = value; // this.workout = Object.assign({}, value);
 
         if(exists(value.intervals)) {
@@ -213,6 +274,91 @@ class WorkoutGraph extends HTMLElement {
     }
     onWorkoutStatus(value) {
         this.workoutStatus = value;
+    }
+    onWatchStatus(status) {
+        // a new ride starts with a clean graph; the last one stays until then
+        if(status === 'started' && this.watchStatus === 'stopped') {
+            this.clearTrace(this.workout);
+            this.drawTrace();
+        }
+        this.watchStatus = status;
+    }
+    clearTrace(workout) {
+        this.trace = { power: [], cadence: [], last: -1, starts: intervalStarts(workout?.intervals) };
+    }
+    // one point a second while the workout runs. The timer writes the elapsed time before the
+    // time left in the interval, so this is the second that has just gone by.
+    onElapsed() {
+        if(this.watchStatus !== 'started' || this.workoutStatus !== 'started') return;
+        if(!equals(this.type, 'workout') || !exists(this.workout?.intervals)) return;
+        const t = this.trace;
+        const at = workoutPosition(this.workout.intervals, t.starts, this.index, this.lapTime);
+        if(at < 0) return;
+        // Previous: what was drawn from here on is drawn again
+        if(at < t.last) {
+            t.power.length = at;
+            t.cadence.length = at;
+        }
+        t.power[at] = Math.max(0, this.live.power || 0);
+        t.cadence[at] = Math.max(0, this.live.cadence || 0);
+        const next = at === t.last + 1;
+        t.last = at;
+        if(next && this.dom.traceStep === 1 && this.dom.tracePower?.getAttribute('d')) {
+            this.appendTrace(at);
+        } else {
+            this.drawTrace();
+        }
+    }
+    // the scales, from the size of the graph and of the bars (render)
+    traceScales() {
+        const height = this.getBoundingClientRect().height;
+        const barsHeight = this.viewPort.height * 0.90;
+        const maxPower = this.maxPower || 1;
+        const y = (share) => Math.min(height - 1, Math.max(1, height - share));
+        return {
+            power: (power) => y((power / maxPower) * barsHeight),
+            cadence: (cadence) => y((cadence / CADENCE_MAX) * height * 0.90),
+        };
+    }
+    appendTrace(at) {
+        const scale = this.dom.traceScale;
+        if(!scale) return;
+        const p = `L${at} ${scale.power(this.trace.power[at]).toFixed(1)}`;
+        const c = `L${at} ${scale.cadence(this.trace.cadence[at]).toFixed(1)}`;
+        this.dom.tracePower.setAttribute('d', this.dom.tracePower.getAttribute('d') + p);
+        this.dom.traceHalo.setAttribute('d', this.dom.traceHalo.getAttribute('d') + p);
+        this.dom.traceCadence.setAttribute('d', this.dom.traceCadence.getAttribute('d') + c);
+    }
+    drawTrace() {
+        if(!this.dom.trace) return;
+        const scale = this.dom.traceScale;
+        const has = this.trace.last >= 0 && exists(scale);
+        const step = this.dom.traceStep ?? 1;
+        const power = has ? tracePath(this.trace.power, scale.power, step) : '';
+        this.dom.tracePower.setAttribute('d', power);
+        this.dom.traceHalo.setAttribute('d', power);
+        this.dom.traceCadence.setAttribute('d', has ? tracePath(this.trace.cadence, scale.cadence, step) : '');
+        this.dom.traceLegend.hidden = !has;
+    }
+    // the trace spans the bars exactly: x in seconds of the workout, y in pixels
+    layoutTrace() {
+        const svg = this.dom.trace;
+        const groups = this.dom.intervals;
+        if(!svg || !groups?.length) return;
+        const parent = this.getBoundingClientRect();
+        const first = groups[0].getBoundingClientRect();
+        const last = groups[groups.length - 1].getBoundingClientRect();
+        const total = (this.workout.intervals ?? []).reduce((sum, i) => sum + (i?.duration ?? 0), 0);
+        if(!(parent.height > 0) || !(total > 0)) {
+            this.dom.traceScale = undefined;
+            return;
+        }
+        const width = Math.max(1, last.right - first.left);
+        svg.style.left = `${first.left - parent.left}px`;
+        svg.style.width = `${width}px`;
+        svg.setAttribute('viewBox', `0 0 ${total} ${parent.height}`);
+        this.dom.traceScale = this.traceScales();
+        this.dom.traceStep = Math.max(1, Math.floor(total / width));
     }
     onIntervalIndex(index) {
         const self = this;
@@ -279,6 +425,17 @@ class WorkoutGraph extends HTMLElement {
             this.dom.steps     = this.querySelectorAll('.graph--bar');
 
             this.progress({index: self.index, dom: self.dom, parent: self, lapTime: self.lapTime});
+
+            this.maxPower = intervalsToMaxPower(this.workout.intervals, this.ftp);
+            if(!this.trace.starts.length) this.clearTrace(this.workout);
+            this.insertAdjacentHTML('beforeend', TRACE);
+            this.dom.trace        = this.querySelector('.nf-trace');
+            this.dom.tracePower   = this.querySelector('.nf-trace-power');
+            this.dom.traceHalo    = this.querySelector('.nf-trace-power-halo');
+            this.dom.traceCadence = this.querySelector('.nf-trace-cadence');
+            this.dom.traceLegend  = this.querySelector('.nf-trace-legend');
+            this.layoutTrace();
+            this.drawTrace();
         }
 
         if(equals(this.type, 'course')) {
@@ -288,6 +445,7 @@ class WorkoutGraph extends HTMLElement {
             this.dom.info     = this.querySelector('.graph--info--cont');
             this.dom.progress = this.querySelector('#progress');
             this.dom.active   = this.querySelector('#progress-active');
+            this.dom.trace    = undefined;
         }
     }
     renderInfo(args = {}) {
@@ -360,6 +518,9 @@ function courseToGraph(course, viewPort) {
 
 export {
     WorkoutGraph,
+    intervalStarts,
+    workoutPosition,
+    tracePath,
     intervalsToGraph,
     courseToGraph,
     renderInfo,
