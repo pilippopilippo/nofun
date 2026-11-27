@@ -25,6 +25,7 @@
     --nf-cr: #F2843B;
     --nf-pi: #EF4F6E;
     --nf-rec: #6C7686;
+    --nf-cadence: #B98CFF;  /* the cadence line: a colour no zone uses */
 }
 
 body {
@@ -327,6 +328,19 @@ html.no-hosted-api .nf-planned { display: none; }
     }
     .nf-progress { height: 8px; border-radius: 4px; background: var(--nf-line); overflow: hidden; }
     .nf-progress > div { width: 0; height: 100%; background: var(--nf-pi); transition: width 0.5s linear; }
+    /* this interval: average power, normalized power, average cadence; a step bigger than the
+       labels, well under the big numbers */
+    .nf-lap-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; margin-top: min(4px, 0.8cqh); }
+    .nf-lap-stats > p { display: flex; flex-direction: column; min-width: 0; }
+    .nf-lap-stats .nf-hero-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nf-lap-value { color: var(--nf-muted); font-size: clamp(11px, 5cqh, 16px); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .nf-lap-value strong { color: var(--nf-text); font: 700 clamp(17px, min(9cqh, 3.2cqw), 34px)/1.05 var(--nf-display); }
+    .nf-lap-stats .nf-short { display: none; }
+    @container hero (max-width: 700px) {
+        .nf-lap-stats { gap: 4px 6px; }
+        .nf-lap-stats .nf-long { display: none; }
+        .nf-lap-stats .nf-short { display: inline; }
+    }
     .nf-band { margin-top: min(6px, 1cqh); }
     .nf-band[hidden], .nf-upnext[hidden], .nf-band-power[hidden] { display: none; }
     .nf-band-track { position: relative; height: 26px; }
@@ -861,3 +875,14 @@ html.no-hosted-api .nf-ride-actions .activity--action { display: none; }
 .nf-day-side { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .nf-today-quiet .nf-today-main { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .nf-today-quiet .nf-ride { width: auto; min-width: 220px; padding: 0 28px; }
+
+/* ---- Ride: the workout graph draws power and cadence as the ride goes ---- */
+workout-graph .nf-trace { position: absolute; top: 0; left: 0; height: 100%; width: 100%; overflow: visible; z-index: 1; pointer-events: none; }
+workout-graph .nf-trace path { fill: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+workout-graph .nf-trace-power { stroke: var(--nf-text); stroke-width: 2px; }
+workout-graph .nf-trace-power-halo { stroke: var(--nf-ground); stroke-width: 4px; stroke-opacity: 0.55; }
+workout-graph .nf-trace-cadence { stroke: var(--nf-cadence); stroke-width: 1.5px; stroke-opacity: 0.95; }
+workout-graph .nf-trace-legend { position: absolute; top: 4px; right: 8px; z-index: 1; display: flex; gap: 12px; margin: 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--nf-ground) 70%, transparent); color: var(--nf-muted); font: 500 12px/1.4 'Barlow', system-ui, sans-serif; pointer-events: none; }
+workout-graph .nf-trace-legend[hidden] { display: none; }
+workout-graph .nf-trace-key::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 6px; border-radius: 2px; vertical-align: middle; background: var(--nf-text); }
+workout-graph .nf-trace-key-cadence::before { background: var(--nf-cadence); }

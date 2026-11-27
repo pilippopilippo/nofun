@@ -3,8 +3,8 @@
 //
 // Power (3 s) next to the target, the zone band (where the ERG target and the power sit
 // inside the zone), interval time left with progress, cadence with its target, heart rate,
-// interval average, what comes next. The DOM is built once; updates only touch text and
-// a few styles, several times a second.
+// the interval's average power, normalized power and average cadence, what comes next.
+// The DOM is built once; updates only touch text and a few styles, several times a second.
 //
 
 import { xf } from '../functions.js';
@@ -41,6 +41,22 @@ function nextInterval(workout, intervalIndex, ftp) {
     return { seconds: next.duration, text: from === to ? `${time} at ${from} W` : `${time} from ${from} to ${to} W` };
 }
 
+// normalized power of 1 s samples: the 30 s rolling average, to the fourth power, averaged,
+// fourth root. In the first 30 s of an interval the rolling average covers the seconds there
+// are, so a short interval has a value too.
+const NP_WINDOW = 30;
+function normalizedPower(samples) {
+    if(!samples?.length) return 0;
+    let sum = 0;
+    let total = 0;
+    for(let i = 0; i < samples.length; i++) {
+        sum += samples[i];
+        if(i >= NP_WINDOW) sum -= samples[i - NP_WINDOW];
+        total += (sum / Math.min(i + 1, NP_WINDOW)) ** 4;
+    }
+    return (total / samples.length) ** 0.25;
+}
+
 // position (0..1) of a value on a scale that shows the zone with some room on both sides
 function scale(range, target) {
     const [lo, hi] = range ?? [target * 0.9, target * 1.1];
@@ -73,7 +89,11 @@ const TEMPLATE = `
             <p class="nf-hero-label">Interval left</p>
             <p class="nf-hero-mid" data-v="left">–:––</p>
             <div class="nf-progress"><div data-v="progress"></div></div>
-            <p class="nf-hero-label">Interval average <strong data-v="lap">–</strong> W</p>
+            <div class="nf-lap-stats" aria-label="This interval">
+                <p><span class="nf-hero-label" title="Average power"><span class="nf-long">Average</span><span class="nf-short">Avg</span></span><span class="nf-lap-value"><strong data-v="lap">–</strong> W</span></p>
+                <p><span class="nf-hero-label" title="Normalized power">NP</span><span class="nf-lap-value"><strong data-v="lap-np">–</strong> W</span></p>
+                <p><span class="nf-hero-label" title="Average cadence"><span class="nf-long">Cadence</span><span class="nf-short">Cad</span></span><span class="nf-lap-value"><strong data-v="lap-cadence">–</strong> rpm</span></p>
+            </div>
         </div>
         <div class="nf-hero-card nf-hero-pair">
             <div>
@@ -105,6 +125,7 @@ class NofunRideHero extends HTMLElement {
         this.s = {
             power: 0, target: 0, mode: MODE_ERG, slope: 0, resistance: 0, range: null, ftp: 0,
             workout: null, intervalIndex: 0, lapTime: NaN,
+            power1s: 0, watchStatus: 'stopped', lapSamples: [],
         };
         const on = (event, key, after) => xf.sub(event, (value) => { this.s[key] = value; after.call(this); }, signal);
         on('db:power3s', 'power', this.drawPower);
@@ -118,6 +139,12 @@ class NofunRideHero extends HTMLElement {
         on('db:intervalIndex', 'intervalIndex', this.drawNext);
         on('db:lapTime', 'lapTime', this.drawLap);
         xf.sub('db:powerLap', (v) => { this.v.lap.textContent = num(v); }, signal);
+        xf.sub('db:cadenceLap', (v) => { this.v['lap-cadence'].textContent = num(v); }, signal);
+        // normalized power of this interval: one sample a second while the timer runs, a new
+        // interval (or a lap) starts again, like the interval average
+        xf.sub('db:power1s', (v) => { this.s.power1s = v; }, signal);
+        xf.sub('db:watchStatus', (v) => { this.s.watchStatus = v; }, signal);
+        xf.sub('watch:lap', () => { this.s.lapSamples = []; this.drawNp(); }, signal);
         xf.sub('db:cadence', (v) => { this.v.cadence.textContent = num(v); }, signal);
         xf.sub('db:cadenceTarget', (v) => { this.v['cadence-target'].textContent = v > 0 ? `Target ${Math.round(v)}` : ''; }, signal);
         xf.sub('db:heartRate', (v) => { this.v.hr.textContent = num(v); }, signal);
@@ -126,7 +153,12 @@ class NofunRideHero extends HTMLElement {
             if(action === 'skip') xf.dispatch('ui:watchLap');
             if(action === 'back') xf.dispatch('ui:watchBack');
         }, signal);
-        xf.sub('db:elapsed', (v) => { this.v.elapsed.textContent = mmss(v || 0); }, signal);
+        xf.sub('db:elapsed', (v) => {
+            this.v.elapsed.textContent = mmss(v || 0);
+            if(this.s.watchStatus !== 'started' || !(v > 0)) return;
+            this.s.lapSamples.push(Math.max(0, this.s.power1s || 0));
+            this.drawNp();
+        }, signal);
         xf.sub('db:speed', (v) => { this.v.speed.textContent = v > 0 ? (v * 3.6).toFixed(1) : '–'; }, signal);   // m/s
         xf.sub('db:distance', (v) => { this.v.distance.textContent = v > 0 ? (v / 1000).toFixed(1) : '–'; }, signal); // m
         xf.sub('db:kcal', (v) => { this.v.kcal.textContent = num(v); }, signal);
@@ -171,6 +203,9 @@ class NofunRideHero extends HTMLElement {
         this.v.hi.textContent = range ? `${hi} W` : '';
         this.v['band-note'].textContent = range ? 'The target moves inside the zone with your cadence' : '';
     }
+    drawNp() {
+        this.v['lap-np'].textContent = num(normalizedPower(this.s.lapSamples));
+    }
     drawLap() {
         const { lapTime, workout, intervalIndex } = this.s;
         this.v.left.textContent = mmss(lapTime);
@@ -188,4 +223,4 @@ class NofunRideHero extends HTMLElement {
 
 customElements.define('nofun-ride-hero', NofunRideHero);
 
-export { NofunRideHero, nextInterval, mmss, scale };
+export { NofunRideHero, nextInterval, mmss, scale, normalizedPower };
